@@ -23,7 +23,7 @@
 - [System Architecture & Multi-Agent Swarm](#system-architecture--multi-agent-swarm)
   - [LangGraph State Machine Architecture](#langgraph-state-machine-architecture)
   - [The 6-Agent Swarm Hierarchy](#the-6-agent-swarm-hierarchy)
-  - [Containerized Microservices Topology](#containerized-microservices-topology)
+  - [Containerized Multi-Service Topology](#containerized-multi-service-topology)
 - [Mathematical Foundation: Deterministic Hybrid ATS Scoring](#mathematical-foundation-deterministic-hybrid-ats-scoring)
 - [Live Demo & Quick Start](#live-demo--quick-start)
   - [Demo User Credentials](#demo-user-credentials)
@@ -136,7 +136,16 @@ flowchart TD
 
 ---
 
-### Containerized Microservices Topology
+### Containerized Multi-Service Topology
+
+The system is deployed as a **containerized multi-service architecture** composed of isolated, purpose-built service containers orchestrated via Docker Compose:
+- **Presentation Service:** React 18 SPA served via Nginx reverse proxy.
+- **Application & Intelligence Service:** FastAPI backend orchestrating the in-process LangGraph multi-agent cognitive pipeline.
+- **Relational Persistence Service:** PostgreSQL 16 Alpine managing users, sessions, and audit histories.
+- **Vector Search Service:** Qdrant Vector DB handling dense semantic embeddings and cosine similarity retrieval.
+- **Observability Suite:** Prometheus scraping application metrics and Grafana rendering real-time telemetry dashboards.
+
+*Note: Rather than introducing the unnecessary network serialization, eventual consistency, and operational overhead of distributed microservices for an agentic cognitive loop, the multi-agent swarm executes as a stateful, low-latency directed graph within the backend service, while infrastructure concerns are strictly isolated across dedicated service containers.*
 
 ```mermaid
 graph LR
