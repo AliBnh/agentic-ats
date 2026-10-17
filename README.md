@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚡ AgenticATS: Autonomous Multi-Agent ATS Intelligence & Career Studio
+# AgenticATS: Autonomous Multi-Agent ATS Intelligence & Career Studio
 
 **A Production-Ready, Closed-Loop Multi-Agent State Machine built with LangGraph, FastAPI, React (Tailwind CSS Light Theme), Groq LPU, PostgreSQL, and Qdrant Vector Store.**
 
@@ -17,27 +17,29 @@
 
 ---
 
-## 📑 Table of Contents
-- [Executive Overview & The "Vibes-Based" ATS Fallacy](#-executive-overview--the-vibes-based-ats-fallacy)
-- [Core Differentiators: What Makes AgenticATS Unique](#-core-differentiators-what-makes-agenticats-unique)
-- [System Architecture & Multi-Agent Swarm](#-system-architecture--multi-agent-swarm)
+## Table of Contents
+- [Executive Overview & The "Vibes-Based" ATS Fallacy](#executive-overview--the-vibes-based-ats-fallacy)
+- [Core Differentiators: What Makes AgenticATS Unique](#core-differentiators-what-makes-agenticats-unique)
+- [System Architecture & Multi-Agent Swarm](#system-architecture--multi-agent-swarm)
   - [LangGraph State Machine Architecture](#langgraph-state-machine-architecture)
   - [The 6-Agent Swarm Hierarchy](#the-6-agent-swarm-hierarchy)
   - [Containerized Microservices Topology](#containerized-microservices-topology)
-- [Mathematical Foundation: Deterministic Hybrid ATS Scoring](#-mathematical-foundation-deterministic-hybrid-ats-scoring)
-- [Live Demo & Quick Start](#-live-demo--quick-start)
+- [Mathematical Foundation: Deterministic Hybrid ATS Scoring](#mathematical-foundation-deterministic-hybrid-ats-scoring)
+- [Live Demo & Quick Start](#live-demo--quick-start)
   - [Demo User Credentials](#demo-user-credentials)
   - [1-Command Docker Launch](#1-command-docker-launch)
   - [Local Development Setup](#local-development-setup)
-- [Software Engineering, Observability & Metrics](#-software-engineering-observability--metrics)
+- [Software Engineering, Observability & Metrics](#software-engineering-observability--metrics)
   - [Prometheus Monitoring](#prometheus-monitoring)
+  - [LangSmith Cognitive Agent Tracing](#langsmith-cognitive-agent-tracing)
   - [Automated Test Suite & Real-World Validation](#automated-test-suite--real-world-validation)
-- [API Reference](#-api-reference)
-- [Executive Harvard/McKinsey ATS PDF Specification](#-executive-harvardmckinsey-ats-pdf-specification)
+- [CI/CD Pipeline (GitHub Actions)](#cicd-pipeline-github-actions)
+- [API Reference](#api-reference)
+- [Executive Harvard/McKinsey ATS PDF Specification](#executive-harvardmckinsey-ats-pdf-specification)
 
 ---
 
-## 🌟 Executive Overview & The "Vibes-Based" ATS Fallacy
+## Executive Overview & The "Vibes-Based" ATS Fallacy
 
 Most AI resume builders and generic LLM prompts suffer from critical algorithmic flaws:
 1. **Hallucinated ATS Scores:** Standard LLM prompts invent an arbitrary score (*"Your resume scores 88/100!"*) based purely on generative vibes with zero mathematical or keyword grounding.
@@ -49,11 +51,11 @@ Most AI resume builders and generic LLM prompts suffer from critical algorithmic
 
 ---
 
-## 💎 Core Differentiators: What Makes AgenticATS Unique
+## Core Differentiators: What Makes AgenticATS Unique
 
 | Traditional AI Assistants (ChatGPT, Claude) | AgenticATS Autonomous Studio |
 | :--- | :--- |
-| **Open-Loop Prompting:** Single-pass text generation with no automated verification. | **Closed-Loop Convergence:** LangGraph cyclic graph executes up to 3 optimization cycles until ATS target threshold (≥85%) is proven. |
+| **Open-Loop Prompting:** Single-pass text generation with no automated verification. | **Closed-Loop Convergence:** LangGraph cyclic graph executes up to 3 optimization cycles until ATS target threshold (>=85%) is proven. |
 | **Hallucinated Scores:** Fake confidence scores without verifiable metrics. | **Deterministic Hybrid Scoring:** Pure mathematical formula combining BM25/Exact Token Overlap + Qdrant Dense Vector Cosine Similarity + Action Verb Density. |
 | **Prone to Sycophantic Hallucinations:** Fabricates degrees, skills, or fake employers. | **Fact-Locked AST & Ethical HITL Gate:** Employment dates, companies, and degrees are immutable. Unverified skills trigger Human-in-the-Loop approval before inclusion. |
 | **Fragile Formatting:** Generates markdown with inconsistent margins, broken accents, or overlapping headings. | **Executive Harvard/McKinsey ATS PDF Exporter:** Pixel-perfect 14mm margins, solid round bullets (`•`), hanging indents, orphan heading guards, and separate cover letter layouts. |
@@ -61,7 +63,7 @@ Most AI resume builders and generic LLM prompts suffer from critical algorithmic
 
 ---
 
-## 🏗️ System Architecture & Multi-Agent Swarm
+## System Architecture & Multi-Agent Swarm
 
 ### LangGraph State Machine Architecture
 
@@ -89,13 +91,15 @@ flowchart TD
         JD_Input --> I[Target Competency Extractor Node]
         I --> J[Hybrid ATS Scoring Node<br/>Code Overlap + Qdrant Vector Cosine]
         
-        J --> CheckScore{"ATS Score >= 85% or<br/>Max 3 Cycles Reached?"}
+        CheckScore{"ATS Score >= 85% or<br/>Max 3 Cycles Reached?"}
+        J --> CheckScore
         
         CheckScore -- "No (Gap Detected)" --> K[Skill Gap & Remediation Planner]
-        K --> CheckHITL{"Unverified Critical<br/>Skill Detected?"}
+        CheckHITL{"Unverified Critical<br/>Skill Detected?"}
+        K --> CheckHITL
         
         CheckHITL -- "Yes" --> HITL2{{"HITL Checkpoint 2:<br/>Ask User: Do you have hands-on experience?"}}
-        HITL2 -. "User Approves with Context" .-> L[STAR Bullet Point Tailoring Agent<br/>Groq Llama 3.3 70B Engine]
+        HITL2 -. "User Approves with Context" .-> L[STAR Bullet Point Tailoring Agent<br/>Groq LPU Inference Engine]
         CheckHITL -- "No" --> L
         
         L --> J
@@ -145,10 +149,13 @@ graph LR
         Backend[agentic_ats_backend<br/>FastAPI + LangGraph + Uvicorn<br/>Port: 8000 -> 8000]
         Postgres[(agentic_ats_postgres<br/>PostgreSQL 16 Alpine<br/>Port: 5433 -> 5432)]
         Qdrant[(agentic_ats_qdrant<br/>Qdrant Vector DB<br/>Port: 6333 -> 6333)]
+        Prometheus[agentic_ats_prometheus<br/>Prometheus Scraper<br/>Port: 9090 -> 9090]
+        Grafana[agentic_ats_grafana<br/>Grafana Dashboards<br/>Port: 3001 -> 3000]
     end
 
-    subgraph External ["External AI Acceleration"]
-        GroqCloud[Groq Cloud API<br/>LPU Fast Inference<br/>llama-3.3-70b-versatile]
+    subgraph External ["External AI Acceleration & Tracing"]
+        GroqCloud[Groq Cloud API<br/>LPU Fast Inference Engine]
+        LangSmith[LangSmith SaaS<br/>Cognitive Agent Tracing]
     end
 
     Browser -->|HTTP / SPA| Frontend
@@ -156,11 +163,14 @@ graph LR
     Backend -->|SQLAlchemy ORM / Sessions| Postgres
     Backend -->|Dense Vector Cosine RAG| Qdrant
     Backend -->|High-Speed LLM Inference| GroqCloud
+    Backend -->|Trace Spans / OpenTelemetry| LangSmith
+    Prometheus -->|Scrapes /metrics| Backend
+    Grafana -->|Queries Metrics| Prometheus
 ```
 
 ---
 
-## 📐 Mathematical Foundation: Deterministic Hybrid ATS Scoring
+## Mathematical Foundation: Deterministic Hybrid ATS Scoring
 
 Unlike generic AI tools that hallucinate a rating, AgenticATS implements a deterministic mathematical scoring equation:
 
@@ -181,7 +191,7 @@ Where:
 
 ---
 
-## 🚀 Live Demo & Quick Start
+## Live Demo & Quick Start
 
 ### Demo User Credentials
 The system comes pre-seeded with an executive demonstration profile and 10 curated, production-grade threads:
@@ -197,11 +207,11 @@ The system comes pre-seeded with an executive demonstration profile and 10 curat
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/your-org/gen-ai-project.git
-cd gen-ai-project
+git clone https://github.com/AliBnh/agentic-ats.git
+cd agentic-ats
 
-# 2. Verify .env configuration
-# GROQ_API_KEY is already loaded or set in .env
+# 2. Configure environment
+# Copy .env.example to .env and configure GROQ_API_KEY (and optional LANGCHAIN_API_KEY)
 
 # 3. Launch the containerized stack
 docker compose up -d --build
@@ -242,7 +252,7 @@ npm run dev
 
 ---
 
-## 📊 Software Engineering, Observability & Metrics
+## Software Engineering, Observability & Metrics
 
 ### Prometheus & Grafana Swarm Observability
 AgenticATS provides enterprise-grade observability via native Prometheus instrumentation on `/metrics` and a pre-configured Grafana monitoring suite:
@@ -258,9 +268,9 @@ AgenticATS provides enterprise-grade observability via native Prometheus instrum
 - **Default Login:** `admin` / `admin`
 - **Pre-provisioned Dashboard:** *"AgenticATS Swarm Intelligence & Observability"* is automatically loaded upon launch, showcasing real-time stat cards, p50/p95 latency timeseries, language distribution donut charts, and HITL state breakdowns.
 
-### 🕵️ LangSmith Cognitive Agent Tracing
+### LangSmith Cognitive Agent Tracing
 AgenticATS natively integrates **LangSmith** for deep observability into the internal decisions of the LangGraph multi-agent swarm:
-- **Hierarchical Flame Graphs:** Visual execution trees of each LangGraph node (`ingestion` ➔ `diagnostic` ➔ `scoring` ➔ `gap_analyzer` ➔ `tailoring` ➔ `synthesis`).
+- **Hierarchical Flame Graphs:** Visual execution trees of each LangGraph node (`ingestion` -> `diagnostic` -> `scoring` -> `gap_analyzer` -> `tailoring` -> `synthesis`).
 - **Token Accounting & Latency:** Real-time token usage and latency metrics per Groq LPU call across optimization cycles.
 - **Human-In-The-Loop Traces:** Visual checkpoints showing the exact moment execution paused for skill confirmation and state resumption.
 - **To Enable:** Simply add your free key to `.env`:
@@ -273,7 +283,7 @@ AgenticATS natively integrates **LangSmith** for deep observability into the int
 
 ---
 
-## 🔄 CI/CD Pipeline (GitHub Actions)
+## CI/CD Pipeline (GitHub Actions)
 
 A battle-tested CI/CD workflow is included at `.github/workflows/ci.yml`:
 1. **Backend CI (`Python 3.11`):** Installs dependencies, runs code compilation checks (`compileall`), and executes the complete `pytest` unit & multi-agent graph test suite.
@@ -288,7 +298,7 @@ git add .
 git commit -m "feat: initial release of AgenticATS production platform"
 
 # 2. Add your remote repository and push
-git remote add origin https://github.com/<your-username>/agentic-ats.git
+git remote add origin https://github.com/AliBnh/agentic-ats.git
 git branch -M main
 git push -u origin main
 ```
@@ -323,7 +333,7 @@ The **10 Real-World Scenarios Test Suite** validates end-to-end processing acros
 
 ---
 
-## 🔌 API Reference
+## API Reference
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
@@ -342,7 +352,7 @@ The **10 Real-World Scenarios Test Suite** validates end-to-end processing acros
 
 ---
 
-## 📄 Executive Harvard/McKinsey ATS PDF Specification
+## Executive Harvard/McKinsey ATS PDF Specification
 
 The PDF exporter (`backend/app/utils/pdf_exporter.py`) was engineered according to the strictest ATS scanning and typography specifications:
 - **Geometry:** 14mm margins for maximum printable real estate without triggering printer edge clipping.
