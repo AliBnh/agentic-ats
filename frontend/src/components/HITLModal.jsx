@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { UserCheck, ShieldAlert, Check, X, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { UserCheck, Check, X, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 export const HITLModal = ({
   hitlData,
@@ -8,7 +18,7 @@ export const HITLModal = ({
 }) => {
   if (!hitlData || !hitlData.hitl_question) return null;
 
-  const { skill, question, context, options = [] } = hitlData.hitl_question;
+  const { skill, question, context } = hitlData.hitl_question;
   const [selectedDecision, setSelectedDecision] = useState('APPROVED');
   const [notes, setNotes] = useState('');
 
@@ -18,33 +28,38 @@ export const HITLModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fadeIn">
-      <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl p-6 shadow-2xl space-y-5">
+    <Dialog open={true} onOpenChange={() => {}}>
+      <DialogContent className="max-w-lg p-6 space-y-4">
         {/* Header */}
-        <div className="flex items-start space-x-3.5 border-b border-slate-100 pb-4">
-          <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center flex-shrink-0 border border-brand-200">
-            <UserCheck className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                Ethical Truth Gate (HITL)
-              </span>
-              <span className="text-[10px] text-slate-400 font-mono">LangGraph Checkpoint Paused</span>
+        <DialogHeader className="space-y-3">
+          <div className="flex items-start space-x-3.5 border-b border-border pb-4">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-border">
+              <UserCheck className="w-5 h-5" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 mt-1">Skill Verification Required</h3>
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <Badge variant="warning" className="text-[10px] uppercase font-bold tracking-wider">
+                  Ethical Truth Gate (HITL)
+                </Badge>
+                <span className="text-[10px] text-muted-foreground font-mono">LangGraph Checkpoint Paused</span>
+              </div>
+              <DialogTitle className="text-base font-bold text-foreground">Skill Verification Required</DialogTitle>
+            </div>
           </div>
-        </div>
+          <DialogDescription className="sr-only">
+            Verify whether candidate has specific skills before proceeding with resume tailoring
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Question & Context */}
         <div className="space-y-3">
-          <p className="text-sm text-slate-800 font-medium leading-relaxed">
+          <p className="text-sm text-foreground font-medium leading-relaxed">
             {question}
           </p>
 
           {context && (
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 italic">
-              <span className="text-brand-700 font-semibold not-italic">From Job Description: </span>
+            <div className="p-3 rounded-xl bg-muted/50 border border-border text-xs text-muted-foreground italic">
+              <span className="text-primary font-semibold not-italic">From Job Description: </span>
               "{context}"
             </div>
           )}
@@ -53,97 +68,77 @@ export const HITLModal = ({
         {/* Form Options */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Select Your Verification Response:
             </label>
             <div className="space-y-2">
-              <label
+              <div
                 onClick={() => setSelectedDecision('APPROVED')}
                 className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
                   selectedDecision === 'APPROVED'
-                    ? 'bg-brand-50 border-brand-500 text-brand-900 font-semibold shadow-xs'
-                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                    ? 'bg-primary/10 border-primary text-foreground font-semibold shadow-xs'
+                    : 'bg-card border-border text-muted-foreground hover:border-border/80 hover:text-foreground'
                 }`}
               >
                 <div className="flex items-center space-x-2.5 text-xs">
-                  <Check className="w-4 h-4 text-emerald-600" />
-                  <span>Yes, I have hands-on experience with <strong>{skill}</strong></span>
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span>Yes, I have hands-on experience with <strong className="text-foreground">{skill}</strong></span>
                 </div>
-                <input
-                  type="radio"
-                  name="hitl_choice"
-                  checked={selectedDecision === 'APPROVED'}
-                  onChange={() => setSelectedDecision('APPROVED')}
-                  className="hidden"
-                />
-              </label>
+              </div>
 
-              <label
+              <div
                 onClick={() => setSelectedDecision('TRANSFERABLE')}
                 className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
                   selectedDecision === 'TRANSFERABLE'
-                    ? 'bg-indigo-50 border-indigo-500 text-indigo-900 font-semibold shadow-xs'
-                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                    ? 'bg-indigo-500/10 border-indigo-500 text-foreground font-semibold shadow-xs'
+                    : 'bg-card border-border text-muted-foreground hover:border-border/80 hover:text-foreground'
                 }`}
               >
                 <div className="flex items-center space-x-2.5 text-xs">
-                  <Sparkles className="w-4 h-4 text-indigo-600" />
+                  <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
                   <span>I have equivalent / transferable knowledge to highlight</span>
                 </div>
-                <input
-                  type="radio"
-                  name="hitl_choice"
-                  checked={selectedDecision === 'TRANSFERABLE'}
-                  onChange={() => setSelectedDecision('TRANSFERABLE')}
-                  className="hidden"
-                />
-              </label>
+              </div>
 
-              <label
+              <div
                 onClick={() => setSelectedDecision('DECLINED')}
                 className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
                   selectedDecision === 'DECLINED'
-                    ? 'bg-rose-50 border-rose-500 text-rose-900 font-semibold shadow-xs'
-                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                    ? 'bg-destructive/10 border-destructive text-destructive font-semibold shadow-xs'
+                    : 'bg-card border-border text-muted-foreground hover:border-border/80 hover:text-foreground'
                 }`}
               >
                 <div className="flex items-center space-x-2.5 text-xs">
-                  <X className="w-4 h-4 text-rose-600" />
+                  <X className="w-4 h-4 text-destructive shrink-0" />
                   <span>No, do not include (Maintain 100% truthfulness)</span>
                 </div>
-                <input
-                  type="radio"
-                  name="hitl_choice"
-                  checked={selectedDecision === 'DECLINED'}
-                  onChange={() => setSelectedDecision('DECLINED')}
-                  className="hidden"
-                />
-              </label>
+              </div>
             </div>
           </div>
 
           {/* Optional context notes */}
           {selectedDecision !== 'DECLINED' && (
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600">
+              <label className="text-xs font-semibold text-foreground">
                 Optional Details / Scope (e.g., "1 year in production with AWS ECS"):
               </label>
-              <input
+              <Input
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Give brief context for the rewriter agent..."
-                className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:bg-white transition-colors"
+                className="text-xs bg-muted/20 focus-visible:bg-background"
               />
             </div>
           )}
 
           {/* Action button */}
           <div className="pt-2">
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm rounded-xl transition-all shadow-sm shadow-brand-600/20 flex items-center justify-center space-x-2 active:scale-[0.99]"
+              variant="brand"
+              className="w-full py-3 h-auto font-semibold text-sm shadow-sm gap-2"
             >
               {loading ? (
                 <>
@@ -156,11 +151,10 @@ export const HITLModal = ({
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
-

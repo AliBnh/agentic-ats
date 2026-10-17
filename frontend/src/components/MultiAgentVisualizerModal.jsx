@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ShieldCheck,
-  Cpu,
-  Layers,
-  FileCheck2,
-  Activity,
-  Sparkles,
   CheckCircle2,
   Terminal,
-  ArrowRight,
   Loader2
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 
 export const MultiAgentVisualizerModal = ({ isOpen, mode = 'remediation', targetRole = '', candidateName = 'Candidate' }) => {
   const [currentAgentIndex, setCurrentAgentIndex] = useState(0);
@@ -107,39 +110,36 @@ export const MultiAgentVisualizerModal = ({ isOpen, mode = 'remediation', target
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/90 max-w-2xl w-full p-7 space-y-6 overflow-hidden">
+    <Dialog open={isOpen} onOpenChange={() => {}}>
+      <DialogContent className="max-w-2xl w-full p-6 sm:p-7 space-y-5 overflow-hidden">
         {/* Header */}
-        <div className="space-y-2">
+        <DialogHeader className="space-y-2 text-left">
           <div className="flex items-center justify-between">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200/80 text-brand-700 text-xs font-bold uppercase tracking-wider shadow-xs">
+            <Badge variant="brand" className="gap-2 py-1 px-3 text-xs uppercase tracking-wider font-bold">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-600"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
               </span>
               <span>Autonomous Multi-Agent Swarm Active</span>
-            </div>
-            <span className="text-xs font-mono font-semibold text-slate-500">
+            </Badge>
+            <span className="text-xs font-mono font-semibold text-muted-foreground">
               {progress}% Completed
             </span>
           </div>
 
-          <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+          <DialogTitle className="text-xl font-extrabold tracking-tight text-foreground">
             {mode === 'remediation'
               ? `Tailoring for: ${targetRole || 'Target Role'}`
               : `Ingesting & Auditing Resume: ${candidateName}`}
-          </h3>
-          <p className="text-xs text-slate-500">
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
             Coordinating 6 specialized AI agents across ingestion, ATS scoring, gap analysis, and STAR tailoring loops.
-          </p>
-        </div>
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Global Progress Bar */}
-        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-          <div
-            className="bg-gradient-to-r from-brand-600 to-indigo-600 h-1.5 rounded-full transition-all duration-700 ease-out"
-            style={{ width: `${progress}%` }}
-          />
+        <div className="w-full">
+          <Progress value={progress} className="h-2" indicatorClassName="bg-gradient-to-r from-brand-600 to-indigo-600" />
         </div>
 
         {/* Multi-Agent Orchestration Flow Cards */}
@@ -150,30 +150,30 @@ export const MultiAgentVisualizerModal = ({ isOpen, mode = 'remediation', target
             const isPending = idx > currentAgentIndex;
 
             return (
-              <div
+              <Card
                 key={agent.id}
-                className={`flex items-start justify-between p-3 rounded-2xl border transition-all duration-300 ${
+                className={`flex items-start justify-between p-3 border transition-all duration-300 ${
                   isCurrent
-                    ? 'bg-brand-50/40 border-brand-300 shadow-xs'
+                    ? 'bg-primary/5 border-primary/40 shadow-xs'
                     : isCompleted
-                    ? 'bg-slate-50/70 border-slate-200/70 opacity-90'
-                    : 'bg-white border-slate-100 opacity-40'
+                    ? 'bg-card/70 border-border opacity-90'
+                    : 'bg-card/40 border-border/50 opacity-40'
                 }`}
               >
                 <div className="flex items-start space-x-3">
                   <div
-                    className={`w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold transition-colors ${
+                    className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold transition-colors ${
                       isCurrent
-                        ? 'bg-brand-600 text-white shadow-xs'
+                        ? 'bg-primary text-primary-foreground shadow-2xs'
                         : isCompleted
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-slate-100 text-slate-400'
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                        : 'bg-muted text-muted-foreground'
                     }`}
                   >
                     {isCompleted ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     ) : isCurrent ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <span>{idx + 1}</span>
                     )}
@@ -181,39 +181,39 @@ export const MultiAgentVisualizerModal = ({ isOpen, mode = 'remediation', target
 
                   <div className="space-y-0.5">
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs font-bold text-slate-900">{agent.name}</span>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600 shadow-2xs">
+                      <span className="text-xs font-bold text-foreground">{agent.name}</span>
+                      <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">
                         {agent.badge}
-                      </span>
+                      </Badge>
                     </div>
-                    <p className="text-[11px] text-slate-500">{agent.role}</p>
+                    <p className="text-[11px] text-muted-foreground">{agent.role}</p>
                   </div>
                 </div>
 
-                <div className="flex-shrink-0 ml-2">
+                <div className="shrink-0 ml-2">
                   {isCurrent && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-100 text-brand-800 animate-pulse">
+                    <Badge variant="brand" className="text-[10px] animate-pulse">
                       Processing
-                    </span>
+                    </Badge>
                   )}
                   {isCompleted && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <Badge variant="success" className="text-[10px]">
                       Verified
-                    </span>
+                    </Badge>
                   )}
                   {isPending && (
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[10px] text-muted-foreground">
                       Queued
                     </span>
                   )}
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
 
         {/* Live Terminal Log Stream */}
-        <div className="bg-slate-900 rounded-2xl p-3.5 border border-slate-800 text-slate-200 font-mono text-[11px] space-y-1 shadow-inner">
+        <div className="bg-slate-950 dark:bg-black rounded-xl p-3.5 border border-slate-800 text-slate-200 font-mono text-[11px] space-y-1 shadow-inner">
           <div className="flex items-center space-x-2 text-[10px] font-semibold uppercase text-slate-400 border-b border-slate-800 pb-1.5 mb-1">
             <Terminal className="w-3.5 h-3.5 text-brand-400" />
             <span>Multi-Agent Live Execution Stream</span>
@@ -231,7 +231,7 @@ export const MultiAgentVisualizerModal = ({ isOpen, mode = 'remediation', target
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

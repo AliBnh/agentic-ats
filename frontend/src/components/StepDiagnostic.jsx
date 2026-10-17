@@ -1,13 +1,17 @@
 import React from 'react';
 import { ShieldCheck, AlertCircle, AlertTriangle, Info, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { ScoreMeter } from './ScoreMeter';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
 export const StepDiagnostic = ({ report, language = 'en', onProceedToMatching }) => {
   if (!report) {
     return (
-      <div className="p-8 text-center text-slate-500">
-        No diagnostic report found. Please complete Step 1 first.
-      </div>
+      <Card className="p-8 text-center text-muted-foreground max-w-xl mx-auto border-dashed">
+        <p className="text-sm">No diagnostic report found. Please complete Step 1 first.</p>
+      </Card>
     );
   }
 
@@ -27,14 +31,16 @@ export const StepDiagnostic = ({ report, language = 'en', onProceedToMatching })
     <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn">
       {/* Title */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold uppercase tracking-wider shadow-xs">
-          <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
-          <span>Stage 1 Diagnostic: Standalone Resume Health</span>
+        <div className="inline-flex items-center space-x-1.5">
+          <Badge variant="brand" className="gap-1.5 py-1 px-3 text-xs uppercase tracking-wider font-bold">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Stage 1 Diagnostic: Standalone Resume Health</span>
+          </Badge>
         </div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+        <h2 className="text-2xl font-bold text-foreground tracking-tight">
           Pre-Job Recruitment Health & Format Audit
         </h2>
-        <p className="text-sm text-slate-500 max-w-xl mx-auto">
+        <p className="text-sm text-muted-foreground max-w-xl mx-auto">
           Evaluated against {language === 'fr' ? 'French (Norme Française)' : 'US/UK ATS & Recruiter'} industry benchmarks.
         </p>
       </div>
@@ -46,64 +52,60 @@ export const StepDiagnostic = ({ report, language = 'en', onProceedToMatching })
           label="Overall CV Health"
         />
 
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
+        <Card className="p-4 flex flex-col justify-between shadow-xs">
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">ATS Parseability</div>
-            <div className="text-2xl font-black text-slate-900 mt-1">{Math.round(ats_formatting_score)}%</div>
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">ATS Parseability</div>
+            <div className="text-2xl font-black text-foreground mt-1">{Math.round(ats_formatting_score)}%</div>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden">
-            <div
-              className="bg-brand-500 h-2 rounded-full transition-all duration-500"
-              style={{ width: `${ats_formatting_score}%` }}
-            />
+          <div className="mt-3">
+            <Progress value={ats_formatting_score} className="h-2" indicatorClassName="bg-primary" />
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">Section structure & contact layout</p>
-        </div>
+          <p className="text-[11px] text-muted-foreground mt-2">Section structure & contact layout</p>
+        </Card>
 
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
+        <Card className="p-4 flex flex-col justify-between shadow-xs">
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Content & STAR Verbs</div>
-            <div className="text-2xl font-black text-slate-900 mt-1">{Math.round(content_impact_score)}%</div>
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Content & STAR Verbs</div>
+            <div className="text-2xl font-black text-foreground mt-1">{Math.round(content_impact_score)}%</div>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden">
-            <div
-              className="bg-indigo-500 h-2 rounded-full transition-all duration-500"
-              style={{ width: `${content_impact_score}%` }}
-            />
+          <div className="mt-3">
+            <Progress value={content_impact_score} className="h-2" indicatorClassName="bg-indigo-500" />
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">Quantifiable metrics & action verbs</p>
-        </div>
+          <p className="text-[11px] text-muted-foreground mt-2">Quantifiable metrics & action verbs</p>
+        </Card>
 
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
+        <Card className="p-4 flex flex-col justify-between shadow-xs">
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cultural / Regional Norms</div>
-            <div className="text-2xl font-black text-slate-900 mt-1">{Math.round(language_norm_score)}%</div>
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Cultural / Regional Norms</div>
+            <div className="text-2xl font-black text-foreground mt-1">{Math.round(language_norm_score)}%</div>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden">
-            <div
-              className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
-              style={{ width: `${language_norm_score}%` }}
-            />
+          <div className="mt-3">
+            <Progress value={language_norm_score} className="h-2" indicatorClassName="bg-emerald-500" />
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">
+          <p className="text-[11px] text-muted-foreground mt-2">
             {language === 'fr' ? 'Conventions recruteurs FR' : 'US/UK EEO compliance'}
           </p>
-        </div>
+        </Card>
       </div>
 
       {/* Issues Breakdown */}
       <div className="space-y-4">
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
-          <span>Identified Remediation Actions ({issues.length})</span>
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center space-x-2">
+            <span>Identified Remediation Actions</span>
+            <Badge variant="secondary" className="font-mono text-xs">
+              {issues.length}
+            </Badge>
+          </h3>
+        </div>
 
         {issues.length === 0 ? (
-          <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm flex items-center space-x-3 shadow-xs">
-            <CheckCircle2 className="w-6 h-6 flex-shrink-0 text-emerald-600" />
+          <Card className="p-6 bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50 text-emerald-900 dark:text-emerald-300 text-sm flex items-center space-x-3 shadow-xs">
+            <CheckCircle2 className="w-6 h-6 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
             <div>
               <span className="font-bold">Exceptional CV Health!</span> No critical formatting or content violations detected.
             </div>
-          </div>
+          </Card>
         ) : (
           <div className="space-y-3">
             {issues.map((issue, idx) => {
@@ -111,48 +113,43 @@ export const StepDiagnostic = ({ report, language = 'en', onProceedToMatching })
               const isWarn = issue.severity === 'WARNING';
 
               return (
-                <div
+                <Card
                   key={idx}
-                  className={`p-4 rounded-2xl border transition-all shadow-xs ${
+                  className={`p-4 transition-all shadow-xs ${
                     isCrit
-                      ? 'bg-rose-50/50 border-rose-200'
+                      ? 'border-destructive/40 bg-destructive/5'
                       : isWarn
-                      ? 'bg-amber-50/50 border-amber-200'
-                      : 'bg-white border-slate-200'
+                      ? 'border-amber-500/30 bg-amber-50/40 dark:bg-amber-950/20'
+                      : 'border-border bg-card'
                   }`}
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center space-x-2.5">
                       {isCrit ? (
-                        <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                        <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0" />
                       ) : isWarn ? (
-                        <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                       ) : (
-                        <Info className="w-4 h-4 text-brand-600 flex-shrink-0" />
+                        <Info className="w-4 h-4 text-primary flex-shrink-0" />
                       )}
-                      <span className="text-xs font-bold text-slate-900">{issue.title}</span>
+                      <span className="text-xs font-bold text-foreground">{issue.title}</span>
                     </div>
 
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border ${
-                        isCrit
-                          ? 'bg-rose-100 text-rose-700 border-rose-200'
-                          : isWarn
-                          ? 'bg-amber-100 text-amber-800 border-amber-200'
-                          : 'bg-slate-100 text-slate-600 border-slate-200'
-                      }`}
+                    <Badge
+                      variant={isCrit ? "destructive" : isWarn ? "warning" : "secondary"}
+                      className="text-[10px] font-bold uppercase tracking-wider"
                     >
                       {issue.severity}
-                    </span>
+                    </Badge>
                   </div>
 
-                  <p className="text-xs text-slate-600 mt-2 pl-6">{issue.description}</p>
+                  <p className="text-xs text-muted-foreground mt-2 pl-6">{issue.description}</p>
 
-                  <div className="mt-2.5 pl-6 pt-2 border-t border-slate-100 flex items-start space-x-2 text-xs">
-                    <span className="font-semibold text-brand-700 flex-shrink-0">Action Plan:</span>
-                    <span className="text-slate-700">{issue.recommendation}</span>
+                  <div className="mt-2.5 pl-6 pt-2 border-t border-border/60 flex items-start space-x-2 text-xs">
+                    <span className="font-semibold text-primary flex-shrink-0">Action Plan:</span>
+                    <span className="text-foreground/90">{issue.recommendation}</span>
                   </div>
-                </div>
+                </Card>
               );
             })}
           </div>
@@ -161,13 +158,14 @@ export const StepDiagnostic = ({ report, language = 'en', onProceedToMatching })
 
       {/* Next Step Action */}
       <div className="pt-4 flex justify-end">
-        <button
+        <Button
           onClick={onProceedToMatching}
-          className="px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm rounded-xl shadow-sm shadow-brand-600/20 flex items-center space-x-2 transition-all active:scale-[0.98]"
+          variant="brand"
+          className="px-6 py-3 h-auto font-semibold text-sm shadow-sm gap-2"
         >
           <span>Proceed to Target Job Alignment</span>
           <ArrowRight className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -7,14 +7,20 @@ import {
   ArrowRight,
   ShieldCheck,
   Loader2,
-  Sparkles,
   UserCheck,
   Cpu,
   LogIn,
   UserPlus,
   CheckCircle2,
-  Zap
+  Zap,
 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const LoginModal = () => {
   const { login, register, loginDemoUser } = useAuth();
@@ -25,7 +31,7 @@ export const LoginModal = () => {
   const [email, setEmail] = useState('demo@agenticats.com');
   const [password, setPassword] = useState('Password123!');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -91,257 +97,251 @@ export const LoginModal = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 via-slate-100/70 to-slate-100 relative overflow-hidden flex flex-col items-center justify-center p-4 sm:p-6 select-none">
+    <div className="min-h-screen w-full bg-background relative overflow-hidden flex flex-col items-center justify-center p-4 sm:p-6 select-none">
       {/* Soft Ambient Light Glows */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-brand-200/40 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-100/50 blur-3xl pointer-events-none" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-brand-500/10 blur-3xl pointer-events-none" />
 
-      {/* Main Elevated Clean White Card */}
-      <div className="relative z-10 max-w-md w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200/90 p-6 sm:p-8 space-y-6 transition-all duration-300">
-        
-        {/* Header with Live Status Pill */}
-        <div className="text-center space-y-2.5">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-semibold tracking-wide shadow-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>6 Autonomous Agents Active</span>
-            <span className="text-emerald-300">•</span>
-            <span className="text-emerald-800">LangGraph Swarm</span>
+      {/* Main Elevated shadcn Card */}
+      <Card className="relative z-10 max-w-md w-full shadow-lg border-border">
+        <CardHeader className="text-center space-y-3 pb-4">
+          <div className="flex justify-center">
+            <Badge variant="success" className="gap-1.5 py-1 px-3 text-[11px] font-semibold tracking-wide">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>6 Autonomous Agents Active</span>
+              <span className="opacity-50">•</span>
+              <span>LangGraph Swarm</span>
+            </Badge>
           </div>
 
-          <div className="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200/80 text-brand-600 flex items-center justify-center mx-auto shadow-xs">
-            <ShieldCheck className="w-6 h-6 text-brand-600" />
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto shadow-2xs">
+            <ShieldCheck className="w-6 h-6" />
           </div>
 
           <div>
-            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            <CardTitle className="text-2xl font-extrabold tracking-tight">
               AgenticATS Career Studio
-            </h2>
-            <p className="text-xs text-slate-500 mt-1">
+            </CardTitle>
+            <CardDescription className="text-xs mt-1">
               Deterministic Multi-Agent Resume Optimization & Career Intelligence
-            </p>
+            </CardDescription>
           </div>
-        </div>
 
-        {/* Tab Switcher: Sign In vs Sign Up */}
-        <div className="flex rounded-2xl bg-slate-100 p-1 border border-slate-200/80">
-          <button
-            type="button"
-            onClick={() => handleToggleMode('login')}
-            className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all duration-200 ${
-              mode === 'login'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <LogIn className="w-3.5 h-3.5 text-brand-600" />
-            <span>Sign In</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleToggleMode('register')}
-            className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all duration-200 ${
-              mode === 'register'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <UserPlus className="w-3.5 h-3.5 text-brand-600" />
-            <span>Create Account</span>
-          </button>
-        </div>
+          {/* Tab Switcher: Sign In vs Sign Up */}
+          <Tabs value={mode} onValueChange={handleToggleMode} className="w-full pt-1">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login" className="flex items-center gap-1.5 text-xs">
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </TabsTrigger>
+              <TabsTrigger value="register" className="flex items-center gap-1.5 text-xs">
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Create Account</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </CardHeader>
 
-        {/* Error / Success Notifications */}
-        {error && (
-          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center space-x-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
+        <CardContent className="space-y-4">
+          {/* Error / Success Notifications */}
+          {error && (
+            <Alert variant="destructive" className="py-2.5">
+              <AlertDescription className="text-xs font-medium">
+                {error}
+              </AlertDescription>
+            </Alert>
+          )}
 
-        {successMsg && (
-          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-            <span>{successMsg}</span>
-          </div>
-        )}
+          {successMsg && (
+            <Alert variant="success" className="py-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <AlertDescription className="text-xs font-medium">
+                {successMsg}
+              </AlertDescription>
+            </Alert>
+          )}
 
-        {/* MODE 1: LOGIN */}
-        {mode === 'login' && (
-          <div className="space-y-4">
-            {/* 1-Click Demo Login Banner */}
-            <div className="p-4 rounded-2xl bg-brand-50/80 border border-brand-200/80 space-y-2.5">
-              <div className="flex items-center justify-between text-xs font-bold text-brand-900">
-                <span className="flex items-center space-x-1.5">
-                  <UserCheck className="w-4 h-4 text-brand-600" />
-                  <span>Pre-Seeded Demo Candidate</span>
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-brand-100 text-[10px] text-brand-700 font-mono">
-                  10 Audits Ready
-                </span>
+          {/* MODE 1: LOGIN */}
+          {mode === 'login' && (
+            <div className="space-y-4">
+              {/* 1-Click Demo Login Card */}
+              <div className="p-4 rounded-xl bg-accent/60 border border-border space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-bold text-foreground">
+                  <span className="flex items-center space-x-1.5">
+                    <UserCheck className="w-4 h-4 text-primary" />
+                    <span>Pre-Seeded Demo Candidate</span>
+                  </span>
+                  <Badge variant="brand" className="font-mono text-[10px]">
+                    10 Audits Ready
+                  </Badge>
+                </div>
+                <div className="text-[11px] text-muted-foreground font-mono space-y-0.5 bg-background p-2.5 rounded-lg border border-border">
+                  <div>Email: <span className="font-semibold text-foreground">demo@agenticats.com</span></div>
+                  <div>Password: <span className="font-semibold text-foreground">Password123!</span></div>
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleQuickDemoLogin}
+                  disabled={loading}
+                  variant="brand"
+                  className="w-full font-bold text-xs gap-1.5 py-2.5 h-auto shadow-sm"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Zap className="w-3.5 h-3.5 fill-current" />
+                      <span>1-Click Launch as Demo Candidate</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
+                </Button>
               </div>
-              <div className="text-[11px] text-slate-600 font-mono space-y-0.5 bg-white/90 p-2.5 rounded-xl border border-brand-100">
-                <div>Email: <span className="font-bold text-slate-900">demo@agenticats.com</span></div>
-                <div>Password: <span className="font-bold text-slate-900">Password123!</span></div>
+
+              <div className="flex items-center space-x-3 text-muted-foreground">
+                <Separator className="flex-1" />
+                <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                  or sign in with email
+                </span>
+                <Separator className="flex-1" />
               </div>
-              <button
-                type="button"
-                onClick={handleQuickDemoLogin}
-                disabled={loading}
-                className="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold shadow-sm shadow-brand-600/20 flex items-center justify-center space-x-2 transition-all active:scale-[0.98]"
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <Zap className="w-3.5 h-3.5 fill-current" />
-                    <span>1-Click Launch as Demo Candidate</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </>
-                )}
-              </button>
-            </div>
 
-            <div className="flex items-center space-x-3 text-slate-300">
-              <div className="flex-1 h-px bg-slate-200" />
-              <span className="text-[10px] uppercase font-bold text-slate-400">or sign in with email</span>
-              <div className="flex-1 h-px bg-slate-200" />
-            </div>
+              {/* Standard Login Form */}
+              <form onSubmit={handleLoginSubmit} className="space-y-3.5">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Email Address</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5 pointer-events-none" />
+                    <Input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@company.com"
+                      className="pl-9 text-xs"
+                    />
+                  </div>
+                </div>
 
-            {/* Standard Login Form */}
-            <form onSubmit={handleLoginSubmit} className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Email Address</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Password</label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5 pointer-events-none" />
+                    <Input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="pl-9 text-xs"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full text-xs font-bold py-2.5 h-auto"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Sign In</span>}
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {/* MODE 2: REGISTER */}
+          {mode === 'register' && (
+            <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Full Name</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <input
+                  <User className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5 pointer-events-none" />
+                  <Input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="e.g. Ali Benhima"
+                    className="pl-9 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Email Address</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5 pointer-events-none" />
+                  <Input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@company.com"
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-brand-500 focus:bg-white transition-colors"
+                    className="pl-9 text-xs"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Password</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Password</label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <input
+                  <Lock className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5 pointer-events-none" />
+                  <Input
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-brand-500 focus:bg-white transition-colors"
+                    placeholder="At least 6 characters"
+                    className="pl-9 text-xs"
                   />
                 </div>
               </div>
 
-              <button
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-muted-foreground absolute left-3 top-2.5 pointer-events-none" />
+                  <Input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repeat your password"
+                    className="pl-9 text-xs"
+                  />
+                </div>
+              </div>
+
+              <Button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm active:scale-[0.98] flex items-center justify-center space-x-2"
+                variant="brand"
+                className="w-full text-xs font-bold py-2.5 h-auto gap-1.5"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Sign In</span>}
-              </button>
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <span>Create Account & Launch Studio</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </Button>
             </form>
-          </div>
-        )}
+          )}
+        </CardContent>
 
-        {/* MODE 2: REGISTER */}
-        {mode === 'register' && (
-          <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">Full Name</label>
-              <div className="relative">
-                <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                <input
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. Ali Benhima"
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-brand-500 focus:bg-white transition-colors"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">Email Address</label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@company.com"
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-brand-500 focus:bg-white transition-colors"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">Password</label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-brand-500 focus:bg-white transition-colors"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">Confirm Password</label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                <input
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repeat your password"
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-brand-500 focus:bg-white transition-colors"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-brand-600/20 active:scale-[0.98] flex items-center justify-center space-x-2"
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  <span>Create Account & Launch Studio</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </>
-              )}
-            </button>
-          </form>
-        )}
-
-        {/* Footer info */}
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+        <CardFooter className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
           <span className="flex items-center space-x-1">
-            <Cpu className="w-3 h-3 text-slate-400" />
+            <Cpu className="w-3 h-3 text-muted-foreground" />
             <span>Groq LPU Inference</span>
           </span>
           <span className="flex items-center space-x-1">
-            <ShieldCheck className="w-3 h-3 text-slate-400" />
+            <ShieldCheck className="w-3 h-3 text-muted-foreground" />
             <span>Fact-Locked Truth Gate</span>
           </span>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 };
