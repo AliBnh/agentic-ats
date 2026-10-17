@@ -1,0 +1,71 @@
+name: AgenticATS CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend-test:
+    name: Backend CI (Python 3.11 & Pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Syntax & Lint Verification
+        run: |
+          python -m compileall backend/app
+
+      - name: Run Pytest Engine Tests
+        env:
+          USE_SQLITE: "true"
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY || 'mock_test_key_for_ci_pipeline' }}
+          PYTHONPATH: backend
+        run: |
+          pytest backend/tests/test_engine.py -v
+
+  frontend-build:
+    name: Frontend CI (Node.js 20 & Vite Build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: frontend/package.json
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci || npm install
+
+      - name: Build Vite Production Assets
+        working-directory: frontend
+        run: npm run build
+
+  docker-lint-and-validate:
+    name: Docker Compose Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose Configuration
+        run: |
+          docker compose config
