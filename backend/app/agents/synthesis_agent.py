@@ -103,66 +103,174 @@ def _build_real_professional_summary(resume_ast: ResumeAST, target_role: str, la
             )
 
 
-def _categorize_skills(skills: List[str], language: str = "en") -> Dict[str, List[str]]:
+def _categorize_skills(skills: List[str], language: str = "en") -> Tuple[Dict[str, List[str]], List[str]]:
     """
     Groups technical and professional competencies into conventional industry clusters.
+    Returns:
+        (grouped_skills_dict, spoken_languages_list)
+    Guarantees:
+        - CI/CD belongs under Cloud, DevOps & CI/CD
+        - Zero ambiguous or unnatural labels like 'Specialized Competencies'
+        - Spoken languages are cleanly separated and returned for the Languages section
     """
+    # 1. Normalization dictionary for industry-standard casing and terms
+    norm_map = {
+        "ci": "CI/CD", "cd": "CI/CD", "ci-cd": "CI/CD", "ci/cd": "CI/CD",
+        "oop": "POO" if language == "fr" else "OOP",
+        "poo": "POO" if language == "fr" else "OOP",
+        "fastapi": "FastAPI", "spring boot": "Spring Boot", "springboot": "Spring Boot",
+        "react": "React", "angular": "Angular", "next.js": "Next.js", "nodejs": "Node.js", "node.js": "Node.js",
+        "rest apis": "REST APIs", "rest api": "REST APIs", "rest": "REST APIs",
+        "microservices": "Microservices", "micro-services": "Microservices",
+        "llms": "LLMs", "llm": "LLMs", "rag": "RAG", "vectordb": "VectorDB", "vector db": "VectorDB",
+        "ai agents": "Agents IA" if language == "fr" else "AI Agents",
+        "agents ia": "Agents IA" if language == "fr" else "AI Agents",
+        "docker": "Docker", "kubernetes": "Kubernetes", "k8s": "Kubernetes",
+        "jenkins": "Jenkins", "git": "Git", "aws": "AWS", "azure": "Azure", "gcp": "GCP",
+        "postgresql": "PostgreSQL", "postgres": "PostgreSQL", "mongodb": "MongoDB", "redis": "Redis", "kafka": "Kafka",
+        "jira": "Jira", "scrum": "Scrum", "agile": "Agile",
+        "product ownership": "Product Ownership", "cadrage si": "Cadrage SI", "amoa": "AMOA",
+        "uat": "Recette métier (UAT)" if language == "fr" else "User Acceptance Testing (UAT)",
+        "conduite du changement": "Conduite du changement" if language == "fr" else "Change Management",
+        "cartographie": "Cartographie des processus" if language == "fr" else "Process Mapping",
+        "besoins métiers": "Recueil des besoins métiers" if language == "fr" else "Business Requirements Gathering",
+        "spécifications": "Spécifications fonctionnelles" if language == "fr" else "Functional Specifications",
+    }
+
+    spoken_keywords = [
+        "anglais", "english", "francais", "français", "french", "arabe", "arabic",
+        "courant", "fluent", "native", "natif", "espagnol", "spanish", "allemand", "german",
+        "italien", "italian", "langues", "languages"
+    ]
+
     categories_en = [
-        ("Languages & Core", ["python", "java", "sql", "mariadb", "typescript", "javascript", "c++", "c#", "c", "bash", "go", "rust", "r", "php", "scala", "oop", "poo"]),
-        ("Frameworks & Full Stack", ["fastapi", "spring boot", "springboot", "spring", "spring jpa", "spring cloud", "react", "angular", "vue", "node.js", "nodejs", "next.js", "tailwind css", "tailwind", "rest apis", "rest api", "rest", "html", "css", "django", "flask", "full stack", "fullstack", "micro-services", "microservices"]),
-        ("AI, ML & Data", ["llms", "llm", "rag", "ai agents", "agents ia", "langchain", "langgraph", "qdrant", "vector db", "vectordb", "vector databases", "pytorch", "tensorflow", "scikit-learn", "pandas", "numpy", "data science", "machine learning", "deep learning", "prompt engineering", "nlp", "data analysis", "ia", "big data", "tableau", "power bi"]),
-        ("Cloud, DevOps & Tools", ["docker", "kubernetes", "k8s", "ci/cd", "github actions", "gitlab ci/cd", "gitlab", "jenkins", "git", "aws", "azure", "gcp", "postgresql", "postgres", "mysql", "mongodb", "redis", "kafka", "linux", "prometheus", "grafana", "camunda", "cloud"]),
-        ("Methodologies & Soft Skills", ["agile", "scrum", "jira", "amoa", "product ownership", "cadrage si", "leadership", "communication", "problem solving", "problem-solving", "résolution de problèmes", "teamwork", "travail d’équipe", "travail en équipe", "autonomie", "autonomie progressive", "rigueur", "esprit d’analyse", "analytical skills", "sens du service"])
+        ("Languages & Core", [
+            "python", "java", "sql", "mariadb", "typescript", "javascript", "c++", "c#", "c",
+            "bash", "shell", "go", "golang", "rust", "r", "php", "scala", "oop", "poo",
+            "data structures", "algorithms"
+        ]),
+        ("Frameworks & Architecture", [
+            "fastapi", "spring boot", "springboot", "spring", "spring jpa", "spring cloud",
+            "react", "angular", "vue", "node.js", "nodejs", "next.js", "tailwind css", "tailwind",
+            "rest apis", "rest api", "rest", "html", "css", "django", "flask", "full stack",
+            "fullstack", "micro-services", "microservices"
+        ]),
+        ("AI, Data & Databases", [
+            "llms", "llm", "rag", "ai agents", "agents ia", "langchain", "langgraph",
+            "qdrant", "vector db", "vectordb", "vector databases", "postgresql", "postgres",
+            "mongodb", "redis", "kafka", "pytorch", "tensorflow", "scikit-learn", "pandas",
+            "numpy", "data science", "machine learning", "deep learning", "prompt engineering",
+            "nlp", "data analysis", "ia", "big data", "tableau", "power bi", "analyse de données"
+        ]),
+        ("Cloud, DevOps & CI/CD", [
+            "docker", "kubernetes", "k8s", "ci/cd", "ci", "cd", "continuous integration",
+            "continuous delivery", "github actions", "gitlab ci/cd", "gitlab", "jenkins",
+            "git", "aws", "azure", "gcp", "linux", "prometheus", "grafana", "camunda", "cloud", "terraform"
+        ]),
+        ("Consulting, AMOA & Delivery", [
+            "cadrage si", "amoa", "conseil & amoa", "it consulting & business analysis", "it scoping",
+            "product ownership", "scrum", "jira", "besoins métiers", "business needs",
+            "business/it coordination", "coordination métiers/it", "cartographie", "process mapping",
+            "change management", "conduite du changement", "recette métier", "uat", "specifications",
+            "spécifications", "backlog", "market research", "études de marché", "reporting",
+            "kpi", "kpis", "excel", "powerpoint", "agile"
+        ]),
+        ("Soft Skills & Leadership", [
+            "communication", "teamwork", "travail d’équipe", "travail d'équipe", "travail en équipe",
+            "problem solving", "problem-solving", "résolution de problèmes", "leadership",
+            "analytical thinking", "esprit d’analyse", "attention to detail", "rigueur",
+            "autonomie", "autonomie progressive", "independence", "sens du service", "synthesis", "synthèse"
+        ])
     ]
 
     categories_fr = [
-        ("Langages & Programmation", ["python", "java", "sql", "mariadb", "typescript", "javascript", "c++", "c#", "c", "bash", "go", "rust", "r", "php", "scala", "oop", "poo"]),
-        ("Frameworks & Full Stack", ["fastapi", "spring boot", "springboot", "spring", "spring jpa", "spring cloud", "react", "angular", "vue", "node.js", "nodejs", "next.js", "tailwind css", "tailwind", "rest apis", "rest api", "rest", "html", "css", "django", "flask", "full stack", "fullstack", "micro-services", "microservices"]),
-        ("IA, Data & Recherche", ["llms", "llm", "rag", "ai agents", "agents ia", "langchain", "langgraph", "qdrant", "vector db", "vectordb", "vector databases", "pytorch", "tensorflow", "scikit-learn", "pandas", "numpy", "data science", "machine learning", "deep learning", "prompt engineering", "nlp", "data analysis", "ia", "big data", "tableau", "power bi"]),
-        ("Cloud, DevOps & Outils", ["docker", "kubernetes", "k8s", "ci/cd", "github actions", "gitlab ci/cd", "gitlab", "jenkins", "git", "aws", "azure", "gcp", "postgresql", "postgres", "mysql", "mongodb", "redis", "kafka", "linux", "prometheus", "grafana", "camunda", "cloud"]),
-        ("Méthodologies & Soft Skills", ["agile", "scrum", "jira", "amoa", "product ownership", "cadrage si", "leadership", "communication", "problem solving", "problem-solving", "résolution de problèmes", "teamwork", "travail d’équipe", "travail en équipe", "autonomie", "autonomie progressive", "rigueur", "esprit d’analyse", "analytical skills", "sens du service"])
+        ("Langages & Programmation", [
+            "python", "java", "sql", "mariadb", "typescript", "javascript", "c++", "c#", "c",
+            "bash", "shell", "go", "golang", "rust", "r", "php", "scala", "oop", "poo",
+            "data structures", "algorithms"
+        ]),
+        ("Frameworks & Architecture Web", [
+            "fastapi", "spring boot", "springboot", "spring", "spring jpa", "spring cloud",
+            "react", "angular", "vue", "node.js", "nodejs", "next.js", "tailwind css", "tailwind",
+            "rest apis", "rest api", "rest", "html", "css", "django", "flask", "full stack",
+            "fullstack", "micro-services", "microservices"
+        ]),
+        ("IA, Data & Bases de Données", [
+            "llms", "llm", "rag", "ai agents", "agents ia", "langchain", "langgraph",
+            "qdrant", "vector db", "vectordb", "vector databases", "postgresql", "postgres",
+            "mongodb", "redis", "kafka", "pytorch", "tensorflow", "scikit-learn", "pandas",
+            "numpy", "data science", "machine learning", "deep learning", "prompt engineering",
+            "nlp", "data analysis", "ia", "big data", "tableau", "power bi", "analyse de données"
+        ]),
+        ("Cloud, DevOps & CI/CD", [
+            "docker", "kubernetes", "k8s", "ci/cd", "ci", "cd", "continuous integration",
+            "continuous delivery", "github actions", "gitlab ci/cd", "gitlab", "jenkins",
+            "git", "aws", "azure", "gcp", "linux", "prometheus", "grafana", "camunda", "cloud", "terraform"
+        ]),
+        ("Conseil, AMOA & Cadrage SI", [
+            "cadrage si", "amoa", "conseil & amoa", "it consulting & business analysis", "it scoping",
+            "product ownership", "scrum", "jira", "besoins métiers", "business needs",
+            "business/it coordination", "coordination métiers/it", "cartographie", "process mapping",
+            "change management", "conduite du changement", "recette métier", "uat", "specifications",
+            "spécifications", "backlog", "market research", "études de marché", "reporting",
+            "kpi", "kpis", "excel", "powerpoint", "agile"
+        ]),
+        ("Compétences Transverses & Humaines", [
+            "communication", "teamwork", "travail d’équipe", "travail d'équipe", "travail en équipe",
+            "problem solving", "problem-solving", "résolution de problèmes", "leadership",
+            "analytical thinking", "esprit d’analyse", "attention to detail", "rigueur",
+            "autonomie", "autonomie progressive", "independence", "sens du service", "synthesis", "synthèse"
+        ])
     ]
 
     cats = categories_fr if language == "fr" else categories_en
     grouped: Dict[str, List[str]] = {c[0]: [] for c in cats}
-    other: List[str] = []
+    spoken_extracted: List[str] = []
 
     seen = set()
-    spoken_language_keywords = ["français", "francais", "anglais", "arabe", "arabic", "french", "english", "courant", "fluent", "native", "langues", "languages"]
-    
+
     for s in skills:
         s_clean = s.strip().rstrip(".,;")
         s_lower = s_clean.lower()
         if not s_clean or s_lower in seen:
             continue
-        
-        # Omit spoken languages from technical competencies (they have their own section)
-        if any(w in s_lower for w in spoken_language_keywords):
-            continue
-            
-        # Normalize common abbreviations
-        if s_lower in ["ci", "cd"]:
-            s_clean = "CI/CD"
-            s_lower = "ci/cd"
 
-        if s_lower in seen:
+        # Extract spoken languages to separate array for the Languages section
+        if any(w in s_lower for w in spoken_keywords):
+            spoken_extracted.append(s_clean)
+            seen.add(s_lower)
             continue
-        seen.add(s_lower)
-        
+
+        normalized_skill = norm_map.get(s_lower, s_clean)
+        norm_lower = normalized_skill.lower()
+
+        if norm_lower in seen:
+            continue
+        seen.add(norm_lower)
+
         matched = False
         for cat_name, keywords in cats:
-            if any(k == s_lower or (len(k) > 3 and k in s_lower) for k in keywords):
-                grouped[cat_name].append(s_clean)
+            if any(k == s_lower or k == norm_lower or (len(k) > 3 and (k in s_lower or k in norm_lower)) for k in keywords):
+                grouped[cat_name].append(normalized_skill)
                 matched = True
                 break
+
+        # Fallback heuristic: cleanly route to closest conventional category rather than creating weird catch-alls
         if not matched:
-            other.append(s_clean)
+            if any(term in norm_lower for term in [".js", "framework", "css", "html", "api"]):
+                grouped[cats[1][0]].append(normalized_skill)
+            elif any(term in norm_lower for term in ["cloud", "devops", "deploy", "server", "infra"]):
+                grouped[cats[3][0]].append(normalized_skill)
+            elif any(term in norm_lower for term in ["data", "db", "sql", "ai", "ml", "stat"]):
+                grouped[cats[2][0]].append(normalized_skill)
+            elif any(term in norm_lower for term in ["consult", "manage", "agile", "cadrage"]):
+                grouped[cats[4][0]].append(normalized_skill)
+            else:
+                grouped[cats[0][0]].append(normalized_skill)
 
-    if other:
-        label = "Technologies Spécialisées" if language == "fr" else "Specialized Competencies"
-        grouped[label] = other[:6]
-
-    return {k: v for k, v in grouped.items() if v}
+    # Return only non-empty categories
+    clean_grouped = {k: v for k, v in grouped.items() if v}
+    return clean_grouped, spoken_extracted
 
 
 def synthesize_final_deliverables(
@@ -217,7 +325,7 @@ def synthesize_final_deliverables(
     
     # Categorized Skills Section
     raw_skills = resume_ast.skills or []
-    grouped_skills = _categorize_skills(raw_skills, language=language)
+    grouped_skills, spoken_from_skills = _categorize_skills(raw_skills, language=language)
     if grouped_skills:
         md += f"## {skills_header}\n"
         for group_name, group_items in grouped_skills.items():
@@ -260,11 +368,18 @@ def synthesize_final_deliverables(
         md += "\n"
 
     # Languages & Leadership Section
-    if resume_ast.languages_spoken or resume_ast.leadership:
+    all_spoken = []
+    existing_spoken = resume_ast.languages_spoken or []
+    for spk in existing_spoken + spoken_from_skills:
+        clean_spk = spk.strip().rstrip(".,;")
+        if clean_spk and clean_spk not in all_spoken:
+            all_spoken.append(clean_spk)
+
+    if all_spoken or resume_ast.leadership:
         md += f"## {lead_header}\n\n"
-        if resume_ast.languages_spoken:
+        if all_spoken:
             label = "Langues" if language == "fr" else "Languages"
-            md += f"- **{label}:** {', '.join(resume_ast.languages_spoken)}\n"
+            md += f"- **{label}:** {', '.join(all_spoken)}\n"
         if resume_ast.leadership:
             label = "Leadership & Activités" if language == "fr" else "Leadership & Activities"
             for lead in resume_ast.leadership[:1]:

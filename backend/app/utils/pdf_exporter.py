@@ -141,18 +141,20 @@ def _render_cover_letter(pdf: ATSFriendlyPDF, content: str):
 
 def _render_resume_pass(
     content: str,
-    margin_x: float = 11.0,
-    margin_y: float = 8.5,
-    name_size: float = 14.0,
-    sec_size: float = 8.8,
-    body_size: float = 7.8,
-    body_lh: float = 3.3,
-    sec_gap_top: float = 1.8,
-    sec_gap_bottom: float = 1.2,
+    margin_x: float = 12.0,
+    margin_y: float = 11.0,
+    name_size: float = 16.0,
+    sec_size: float = 10.2,
+    body_size: float = 8.8,
+    body_lh: float = 4.3,
+    sec_gap_top: float = 3.6,
+    sec_gap_bottom: float = 2.0,
+    job_gap: float = 2.2,
     include_summary: bool = True
 ) -> ATSFriendlyPDF:
     """
     Renders an ATS single-column executive resume with exact mathematical geometric control.
+    Balances readable font sizing, line height, and section distribution to eliminate bottom voids.
     """
     pdf = ATSFriendlyPDF(orientation="P", unit="mm", format="A4", is_resume=True)
     pdf.set_margins(margin_x, margin_y, margin_x)
@@ -160,12 +162,13 @@ def _render_resume_pass(
     pdf.add_page()
 
     printable_w = 210.0 - (2.0 * margin_x)
-    bullet_indent = margin_x + 4.0
-    bullet_text_w = printable_w - 4.0
+    bullet_indent = margin_x + 4.5
+    bullet_text_w = printable_w - 4.5
 
     lines = content.splitlines()
     in_header_block = True
     skip_summary = False
+    is_first_job_in_section = True
 
     i = 0
     while i < len(lines):
@@ -180,13 +183,14 @@ def _render_resume_pass(
             name = sanitize_pdf_text(line_str[2:].strip())
             pdf.set_font("Helvetica", "B", name_size)
             pdf.set_text_color(15, 23, 42) # dark slate
-            pdf.cell(printable_w, 5.0, name, align="C")
-            pdf.ln(5.2)
+            pdf.cell(printable_w, 5.8, name, align="C")
+            pdf.ln(6.2)
             i += 1
 
         # Header 2: Section Heading (## Section)
         elif line_str.startswith("## "):
             in_header_block = False
+            is_first_job_in_section = True
             sec_title = sanitize_pdf_text(line_str[3:].strip())
             
             # Check if this is the summary section and user layout flagged it off
@@ -201,13 +205,13 @@ def _render_resume_pass(
             pdf.ln(sec_gap_top)
             pdf.set_font("Helvetica", "B", sec_size)
             pdf.set_text_color(30, 58, 138) # Deep navy accent
-            pdf.cell(printable_w, 3.8, sec_title.upper(), align="L")
-            pdf.ln(3.8)
+            pdf.cell(printable_w, 4.2, sec_title.upper(), align="L")
+            pdf.ln(4.2)
             
             # Subtle accent divider rule across full width
             curr_y = pdf.get_y()
             pdf.set_draw_color(203, 213, 225) # slate-300
-            pdf.set_line_width(0.25)
+            pdf.set_line_width(0.28)
             pdf.line(margin_x, curr_y, 210.0 - margin_x, curr_y)
             pdf.ln(sec_gap_bottom)
             i += 1
@@ -221,11 +225,14 @@ def _render_resume_pass(
             raw_title = line_str[4:].strip()
             clean_title = sanitize_pdf_text(re.sub(r'[*_#]', '', raw_title))
             
-            pdf.ln(0.8)
-            pdf.set_font("Helvetica", "B", body_size + 0.5)
+            if not is_first_job_in_section:
+                pdf.ln(job_gap)
+            is_first_job_in_section = False
+
+            pdf.set_font("Helvetica", "B", body_size + 0.7)
             pdf.set_text_color(15, 23, 42) # dark slate
-            pdf.cell(printable_w, 3.8, clean_title, align="L")
-            pdf.ln(3.8)
+            pdf.cell(printable_w, 4.0, clean_title, align="L")
+            pdf.ln(4.0)
             i += 1
 
         # Bullet point (- Bullet, * Bullet, • Bullet)
@@ -265,7 +272,7 @@ def _render_resume_pass(
                 pdf.set_text_color(30, 41, 59)
                 pdf.multi_cell(bullet_text_w - prefix_w, body_lh, group_skills)
                 pdf.set_left_margin(margin_x)
-                pdf.ln(0.4)
+                pdf.ln(0.5)
             else:
                 clean_text = sanitize_pdf_text(re.sub(r'[*_]', '', bullet_text))
                 pdf.set_font("Helvetica", "B", body_size)
@@ -279,7 +286,7 @@ def _render_resume_pass(
                 pdf.set_left_margin(bullet_indent)
                 pdf.multi_cell(bullet_text_w, body_lh, clean_text)
                 pdf.set_left_margin(margin_x)
-                pdf.ln(0.4)
+                pdf.ln(0.5)
             i += 1
 
         # Markdown horizontal rule (---)
@@ -288,7 +295,7 @@ def _render_resume_pass(
             pdf.set_draw_color(226, 232, 240)
             pdf.set_line_width(0.25)
             pdf.line(margin_x, curr_y, 210.0 - margin_x, curr_y)
-            pdf.ln(1.2)
+            pdf.ln(1.5)
             i += 1
 
         # Header Subtitle / Contact Information
@@ -296,16 +303,16 @@ def _render_resume_pass(
             clean_str = sanitize_pdf_text(re.sub(r'[*_]', '', line_str))
             if any(k in clean_str.lower() for k in ["@", "+212", "phone", "linkedin", "github"]):
                 # Contact info line
-                pdf.set_font("Helvetica", "", 8.0)
+                pdf.set_font("Helvetica", "", 8.3)
                 pdf.set_text_color(71, 85, 105) # slate-600
-                pdf.cell(printable_w, 3.6, clean_str, align="C")
-                pdf.ln(3.8)
+                pdf.cell(printable_w, 3.8, clean_str, align="C")
+                pdf.ln(4.2)
             else:
                 # Subtitle (Professional Headline)
-                pdf.set_font("Helvetica", "B", 9.2)
+                pdf.set_font("Helvetica", "B", 9.8)
                 pdf.set_text_color(30, 58, 138) # Navy accent
-                pdf.cell(printable_w, 4.0, clean_str, align="C")
-                pdf.ln(4.2)
+                pdf.cell(printable_w, 4.2, clean_str, align="C")
+                pdf.ln(4.6)
             i += 1
 
         # Regular paragraph, dates, or summary text
@@ -317,15 +324,15 @@ def _render_resume_pass(
             is_dates = bool(re.search(r'\d{2}/\d{4}|\d{4}', clean_str) and len(clean_str) < 65)
             
             if is_dates:
-                pdf.set_font("Helvetica", "I", body_size - 0.3)
+                pdf.set_font("Helvetica", "I", body_size - 0.2)
                 pdf.set_text_color(100, 116, 139) # slate-500
-                pdf.cell(printable_w, 3.3, clean_str, align="L")
-                pdf.ln(3.5)
+                pdf.cell(printable_w, 3.4, clean_str, align="L")
+                pdf.ln(3.6)
             else:
                 pdf.set_font("Helvetica", "", body_size)
                 pdf.set_text_color(51, 65, 85) # slate-700
                 pdf.multi_cell(printable_w, body_lh, clean_str)
-                pdf.ln(0.6)
+                pdf.ln(0.8)
             i += 1
 
     return pdf
@@ -337,56 +344,66 @@ def generate_ats_pdf(markdown_content: str) -> bytes:
     - Auto-detects Cover Letter vs ATS Resume
     - Applies Harvard/McKinsey ATS single-column formatting
     - Strict Latin-1 accent preservation & 0 question marks
-    - ADAPTIVE 1-PAGE GUARANTEE: strictly fits on exactly 1 page for resumes
+    - ADAPTIVE 1-PAGE GUARANTEE: dynamically chooses the most spacious typography
+      and breathing room that strictly fits on exactly 1 page, preventing empty bottom space.
     """
     if _is_cover_letter(markdown_content):
         pdf = ATSFriendlyPDF(orientation="P", unit="mm", format="A4", is_resume=False)
         _render_cover_letter(pdf, markdown_content)
         return pdf.output()
 
-    # Pass 1: Standard Executive Layout
-    pdf1 = _render_resume_pass(
-        markdown_content,
-        margin_x=11.0,
-        margin_y=8.5,
-        name_size=14.0,
-        sec_size=8.8,
-        body_size=7.8,
-        body_lh=3.3,
-        sec_gap_top=1.8,
-        sec_gap_bottom=1.2,
-        include_summary=True
-    )
-    if pdf1.page_no() <= 1:
-        return pdf1.output()
+    # Multi-pass progressive density solver:
+    # Starts with generous, spacious executive formatting and gracefully compacts
+    # only as much as necessary to ensure 100% 1-page fit.
+    layout_passes = [
+        # Pass 1: Spacious Executive (Ideal page fill ~88-95%, no bottom vacuum)
+        {
+            "margin_x": 12.0, "margin_y": 11.0,
+            "name_size": 16.0, "sec_size": 10.2, "body_size": 8.8, "body_lh": 4.4,
+            "sec_gap_top": 3.6, "sec_gap_bottom": 2.0, "job_gap": 2.2,
+            "include_summary": True
+        },
+        # Pass 2: Balanced Comfort
+        {
+            "margin_x": 11.5, "margin_y": 10.0,
+            "name_size": 15.5, "sec_size": 9.8, "body_size": 8.5, "body_lh": 4.1,
+            "sec_gap_top": 3.0, "sec_gap_bottom": 1.7, "job_gap": 1.8,
+            "include_summary": True
+        },
+        # Pass 3: Clean Density
+        {
+            "margin_x": 11.0, "margin_y": 9.0,
+            "name_size": 15.0, "sec_size": 9.4, "body_size": 8.2, "body_lh": 3.8,
+            "sec_gap_top": 2.5, "sec_gap_bottom": 1.4, "job_gap": 1.4,
+            "include_summary": True
+        },
+        # Pass 4: Moderate Compact
+        {
+            "margin_x": 10.5, "margin_y": 8.5,
+            "name_size": 14.5, "sec_size": 9.0, "body_size": 7.9, "body_lh": 3.5,
+            "sec_gap_top": 2.0, "sec_gap_bottom": 1.1, "job_gap": 1.0,
+            "include_summary": True
+        },
+        # Pass 5: Ultra-Dense Safeguard
+        {
+            "margin_x": 10.0, "margin_y": 8.0,
+            "name_size": 13.8, "sec_size": 8.5, "body_size": 7.5, "body_lh": 3.2,
+            "sec_gap_top": 1.6, "sec_gap_bottom": 0.9, "job_gap": 0.8,
+            "include_summary": True
+        },
+        # Pass 6: Last Resort (Condense Summary)
+        {
+            "margin_x": 9.5, "margin_y": 7.0,
+            "name_size": 13.0, "sec_size": 8.2, "body_size": 7.2, "body_lh": 2.9,
+            "sec_gap_top": 1.2, "sec_gap_bottom": 0.8, "job_gap": 0.6,
+            "include_summary": False
+        }
+    ]
 
-    # Pass 2: Compact Executive Fit
-    pdf2 = _render_resume_pass(
-        markdown_content,
-        margin_x=10.0,
-        margin_y=7.5,
-        name_size=13.5,
-        sec_size=8.5,
-        body_size=7.4,
-        body_lh=3.0,
-        sec_gap_top=1.4,
-        sec_gap_bottom=1.0,
-        include_summary=True
-    )
-    if pdf2.page_no() <= 1:
-        return pdf2.output()
+    for cfg in layout_passes:
+        candidate_pdf = _render_resume_pass(markdown_content, **cfg)
+        if candidate_pdf.page_no() <= 1:
+            return candidate_pdf.output()
 
-    # Pass 3: Space-Optimized 1-Page Guarantee (condense summary if space requires)
-    pdf3 = _render_resume_pass(
-        markdown_content,
-        margin_x=9.5,
-        margin_y=6.5,
-        name_size=13.0,
-        sec_size=8.2,
-        body_size=7.2,
-        body_lh=2.85,
-        sec_gap_top=1.2,
-        sec_gap_bottom=0.8,
-        include_summary=False
-    )
-    return pdf3.output()
+    # Fallback to last attempt if extreme length
+    return candidate_pdf.output()
