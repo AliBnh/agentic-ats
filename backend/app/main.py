@@ -1,6 +1,8 @@
+import os
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.config import settings
 from app.database import engine, Base, SessionLocal
 from app.utils.seed_data import seed_database
 from app.api.auth_routes import router as auth_router
@@ -13,6 +15,16 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 logger = logging.getLogger("agentic_ats")
+
+# LangSmith Observability Setup
+if settings.LANGCHAIN_TRACING_V2.lower() == "true" and settings.LANGCHAIN_API_KEY:
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+    os.environ["LANGCHAIN_ENDPOINT"] = settings.LANGCHAIN_ENDPOINT
+    os.environ["LANGCHAIN_API_KEY"] = settings.LANGCHAIN_API_KEY
+    os.environ["LANGCHAIN_PROJECT"] = settings.LANGCHAIN_PROJECT
+    logger.info(f"LangSmith Tracing active for project: '{settings.LANGCHAIN_PROJECT}'")
+else:
+    logger.info("LangSmith Tracing inactive (optional: set LANGCHAIN_API_KEY to enable).")
 
 # Create tables
 try:

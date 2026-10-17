@@ -258,6 +258,19 @@ AgenticATS provides enterprise-grade observability via native Prometheus instrum
 - **Default Login:** `admin` / `admin`
 - **Pre-provisioned Dashboard:** *"AgenticATS Swarm Intelligence & Observability"* is automatically loaded upon launch, showcasing real-time stat cards, p50/p95 latency timeseries, language distribution donut charts, and HITL state breakdowns.
 
+### 🕵️ LangSmith Cognitive Agent Tracing
+AgenticATS natively integrates **LangSmith** for deep observability into the internal decisions of the LangGraph multi-agent swarm:
+- **Hierarchical Flame Graphs:** Visual execution trees of each LangGraph node (`ingestion` ➔ `diagnostic` ➔ `scoring` ➔ `gap_analyzer` ➔ `tailoring` ➔ `synthesis`).
+- **Token Accounting & Latency:** Real-time token usage and latency metrics per Groq LPU call across optimization cycles.
+- **Human-In-The-Loop Traces:** Visual checkpoints showing the exact moment execution paused for skill confirmation and state resumption.
+- **To Enable:** Simply add your free key to `.env`:
+  ```env
+  LANGCHAIN_TRACING_V2=true
+  LANGCHAIN_API_KEY=your_langsmith_api_key_here
+  LANGCHAIN_PROJECT=agentic-ats
+  ```
+*(Tracing is 100% non-blocking and defaults to inactive if no key is provided).*
+
 ---
 
 ## 🔄 CI/CD Pipeline (GitHub Actions)

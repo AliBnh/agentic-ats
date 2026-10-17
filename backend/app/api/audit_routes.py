@@ -154,7 +154,12 @@ def confirm_parsing(
     }
 
     # Run Diagnostic Node through graph
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {
+        "configurable": {"thread_id": thread_id},
+        "run_name": f"Stage 1: Health Diagnostic ({language.upper()})",
+        "tags": ["agentic-ats", "diagnostic-audit", language],
+        "metadata": {"thread_id": thread_id, "language": language, "stage": "health_audit"}
+    }
     result_state = ats_graph.invoke(initial_state, config=config)
     ACTIVE_GRAPH_STATES[thread_id] = result_state
 
@@ -248,12 +253,22 @@ def match_job(
             "status": "AUDITED"
         }
 
-    # Inject Job Description and target role
+    target_role_clean = request.target_role or "Target Role"
     current_state["job_description"] = request.job_description
-    current_state["target_role"] = request.target_role or "Target Role"
+    current_state["target_role"] = target_role_clean
     current_state["status"] = "MATCHING"
 
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {
+        "configurable": {"thread_id": thread_id},
+        "run_name": f"Stage 2: Target Optimization - {target_role_clean}",
+        "tags": ["agentic-ats", "target-optimization", current_state.get("language", "en")],
+        "metadata": {
+            "thread_id": thread_id,
+            "target_role": target_role_clean,
+            "language": current_state.get("language", "en"),
+            "stage": "target_optimization"
+        }
+    }
     result_state = ats_graph.invoke(current_state, config=config)
     ACTIVE_GRAPH_STATES[thread_id] = result_state
 
@@ -307,7 +322,17 @@ def resume_hitl_execution(
     HITL_INTERRUPTS_TOTAL.labels(action="resolved").inc()
 
     # Resume graph execution
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {
+        "configurable": {"thread_id": thread_id},
+        "run_name": f"Stage 3: HITL Resumed - {skill}",
+        "tags": ["agentic-ats", "hitl-resumed", current_state.get("language", "en")],
+        "metadata": {
+            "thread_id": thread_id,
+            "verified_skill": skill,
+            "decision": decision,
+            "stage": "hitl_resumed"
+        }
+    }
     result_state = ats_graph.invoke(current_state, config=config)
     ACTIVE_GRAPH_STATES[thread_id] = result_state
 
