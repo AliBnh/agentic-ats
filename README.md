@@ -212,6 +212,8 @@ The system comes pre-seeded with an executive demonstration profile and 10 curat
 | **Candidate** | Ali BENHIMA (Software Engineer / Full Stack & GenAI) |
 | **10 Pre-Loaded Target Roles** | 1. Wavestone Casablanca (ALMA Consultant.e Stagiaire)<br/>2. BCG X Delivery (Software Engineering Intern)<br/>3. Deloitte Afrique (Stagiaire Conseil en Technologies)<br/>4. Visa Consulting & Analytics (VCA Intern)<br/>5. Ostorlab (Cybersecurity & Security Platform Intern)<br/>6. Capgemini Engineering (Smart Carpool Back-End)<br/>7. Sofrecom Orange Group (Full Stack Java/Angular)<br/>8. Capgemini Data & AI (Stagiaire PFE Data & AI)<br/>9. VISEO (Senior SWE LLMs & GenAI)<br/>10. ChainGPT (AI-Native Software Engineer) |
 
+*Authentication Options: Sign in instantly using the 1-click demo button, or click the **Create Account** tab to register and audit custom candidate profiles.*
+
 ### 1-Command Docker Launch
 
 ```bash
