@@ -217,88 +217,130 @@ function Dashboard() {
           onLoadPairing={handleLoadPairing}
         />
 
-        {/* Stepper Navigation */}
-        <nav aria-label="Workflow progress" className="border-b border-border bg-card/80 backdrop-blur-md px-4 sm:px-6 py-2.5 shadow-2xs">
-          <div className="max-w-4xl mx-auto flex items-center justify-between text-xs">
+        {/* Executive Workflow Stepper Navigation */}
+        <nav aria-label="Workflow progress" className="border-b border-border/80 bg-card/60 backdrop-blur-xl px-4 sm:px-6 py-2.5 shadow-xs sticky top-16 z-10 transition-colors">
+          <div className="max-w-5xl mx-auto flex items-center justify-between gap-1 sm:gap-2">
+            {/* Step 1: Ingestion */}
             <button
               type="button"
               onClick={() => setCurrentStep(1)}
-              className={`flex items-center space-x-2 font-medium transition-colors ${
-                currentStep >= 1 ? 'text-primary font-semibold' : 'text-muted-foreground'
+              className={`flex items-center space-x-2.5 py-1 px-2 rounded-xl transition-all ${
+                currentStep === 1
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs'
+                  : currentStep > 1
+                  ? 'text-foreground hover:bg-accent/60'
+                  : 'text-muted-foreground'
               }`}
             >
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-                currentStep >= 1
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold transition-all shrink-0 ${
+                currentStep > 1
+                  ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                  : currentStep === 1
                   ? 'bg-primary text-primary-foreground shadow-xs'
-                  : 'bg-muted text-muted-foreground border border-border'
+                  : 'bg-muted text-muted-foreground border border-border/60'
               }`}>
-                1
-              </span>
-              <span className="hidden sm:inline">Ingestion & Verification</span>
-              <span className="sm:hidden">Ingestion</span>
+                {currentStep > 1 ? <CheckCircle2 className="w-4 h-4" /> : '1'}
+              </div>
+              <div className="text-left hidden sm:block">
+                <div className="text-xs font-bold leading-tight">Ingestion</div>
+                <div className="text-[10px] text-muted-foreground font-normal">Fact-Locked AST</div>
+              </div>
+              <span className="sm:hidden text-xs font-semibold">1. Ingestion</span>
             </button>
 
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
+            <div className={`h-0.5 flex-1 mx-1 rounded-full transition-colors ${
+              currentStep > 1 ? 'bg-primary/60' : 'bg-border/60'
+            }`} />
 
+            {/* Step 2: Diagnostic */}
             <button
               type="button"
               onClick={() => diagnosticReport && setCurrentStep(2)}
               disabled={!diagnosticReport}
-              className={`flex items-center space-x-2 font-medium transition-colors ${
-                currentStep >= 2 ? 'text-primary font-semibold' : 'text-muted-foreground disabled:opacity-40'
+              className={`flex items-center space-x-2.5 py-1 px-2 rounded-xl transition-all ${
+                currentStep === 2
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs'
+                  : currentStep > 2
+                  ? 'text-foreground hover:bg-accent/60'
+                  : 'text-muted-foreground disabled:opacity-40'
               }`}
             >
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-                currentStep >= 2
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold transition-all shrink-0 ${
+                currentStep > 2
+                  ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                  : currentStep === 2
                   ? 'bg-primary text-primary-foreground shadow-xs'
-                  : 'bg-muted text-muted-foreground border border-border'
+                  : 'bg-muted text-muted-foreground border border-border/60'
               }`}>
-                2
-              </span>
-              <span className="hidden sm:inline">Health Diagnostic</span>
-              <span className="sm:hidden">Diagnostic</span>
+                {currentStep > 2 ? <CheckCircle2 className="w-4 h-4" /> : '2'}
+              </div>
+              <div className="text-left hidden sm:block">
+                <div className="text-xs font-bold leading-tight">Health Audit</div>
+                <div className="text-[10px] text-muted-foreground font-normal">ATS & STAR Gaps</div>
+              </div>
+              <span className="sm:hidden text-xs font-semibold">2. Health</span>
             </button>
 
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
+            <div className={`h-0.5 flex-1 mx-1 rounded-full transition-colors ${
+              currentStep > 2 ? 'bg-primary/60' : 'bg-border/60'
+            }`} />
 
+            {/* Step 3: Job Targeting */}
             <button
               type="button"
               onClick={() => diagnosticReport && setCurrentStep(3)}
               disabled={!diagnosticReport}
-              className={`flex items-center space-x-2 font-medium transition-colors ${
-                currentStep >= 3 ? 'text-primary font-semibold' : 'text-muted-foreground disabled:opacity-40'
+              className={`flex items-center space-x-2.5 py-1 px-2 rounded-xl transition-all ${
+                currentStep === 3
+                  ? 'bg-primary/10 text-primary font-bold shadow-xs'
+                  : currentStep > 3
+                  ? 'text-foreground hover:bg-accent/60'
+                  : 'text-muted-foreground disabled:opacity-40'
               }`}
             >
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-                currentStep >= 3
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold transition-all shrink-0 ${
+                currentStep > 3
+                  ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                  : currentStep === 3
                   ? 'bg-primary text-primary-foreground shadow-xs'
-                  : 'bg-muted text-muted-foreground border border-border'
+                  : 'bg-muted text-muted-foreground border border-border/60'
               }`}>
-                3
-              </span>
-              <span className="hidden sm:inline">Job Targeting</span>
-              <span className="sm:hidden">Targeting</span>
+                {currentStep > 3 ? <CheckCircle2 className="w-4 h-4" /> : '3'}
+              </div>
+              <div className="text-left hidden sm:block">
+                <div className="text-xs font-bold leading-tight">Job Alignment</div>
+                <div className="text-[10px] text-muted-foreground font-normal">Vector Match & HITL</div>
+              </div>
+              <span className="sm:hidden text-xs font-semibold">3. Target</span>
             </button>
 
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
+            <div className={`h-0.5 flex-1 mx-1 rounded-full transition-colors ${
+              currentStep > 3 ? 'bg-emerald-500/60' : 'bg-border/60'
+            }`} />
 
+            {/* Step 4: Studio & Deliverables */}
             <button
               type="button"
               onClick={() => tailoredResult && setCurrentStep(4)}
               disabled={!tailoredResult}
-              className={`flex items-center space-x-2 font-medium transition-colors ${
-                currentStep >= 4 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-muted-foreground disabled:opacity-40'
+              className={`flex items-center space-x-2.5 py-1 px-2 rounded-xl transition-all ${
+                currentStep === 4
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold shadow-xs'
+                  : 'text-muted-foreground disabled:opacity-40'
               }`}
             >
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-                currentStep >= 4
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold transition-all shrink-0 ${
+                currentStep === 4
                   ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-muted text-muted-foreground border border-border'
+                  : 'bg-muted text-muted-foreground border border-border/60'
               }`}>
-                4
-              </span>
-              <span className="hidden sm:inline">Studio & Export</span>
-              <span className="sm:hidden">Studio</span>
+                {currentStep === 4 ? <Sparkles className="w-3.5 h-3.5" /> : '4'}
+              </div>
+              <div className="text-left hidden sm:block">
+                <div className="text-xs font-bold leading-tight">Studio & Export</div>
+                <div className="text-[10px] text-muted-foreground font-normal">STAR & Harvard PDF</div>
+              </div>
+              <span className="sm:hidden text-xs font-semibold">4. Studio</span>
             </button>
           </div>
         </nav>

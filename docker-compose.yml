@@ -62,6 +62,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: agentic_ats_frontend
+    environment:
+      VITE_API_URL: http://localhost:8000
     restart: always
     ports:
       - "3005:80"
