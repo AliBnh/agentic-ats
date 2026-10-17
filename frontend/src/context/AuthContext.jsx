@@ -15,11 +15,19 @@ export const AuthProvider = ({ children }) => {
           const userData = await api.getMe();
           setUser(userData);
         } catch (err) {
-          console.warn('Stored token invalid. Auto-authenticating with demo user.');
-          await loginDemoUser();
+          console.warn('Stored token invalid. Logging out.');
+          localStorage.removeItem('agentic_ats_token');
+          setUser(null);
         }
       } else {
-        await loginDemoUser();
+        // Auto-authenticate with demo user on initial visit if desired, or allow sign in
+        try {
+          const data = await api.login('demo@agenticats.com', 'Password123!');
+          localStorage.setItem('agentic_ats_token', data.access_token);
+          setUser(data.user);
+        } catch (err) {
+          setUser(null);
+        }
       }
       setLoading(false);
     };
@@ -28,24 +36,21 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const loginDemoUser = async () => {
-    try {
-      const data = await api.login('demo@agenticats.com', 'Password123!');
-      localStorage.setItem('agentic_ats_token', data.access_token);
-      setUser(data.user);
-    } catch (err) {
-      // If demo user not yet created, register it
-      try {
-        const regData = await api.register('demo@agenticats.com', 'Password123!', 'Alexandre Demo');
-        localStorage.setItem('agentic_ats_token', regData.access_token);
-        setUser(regData.user);
-      } catch (e) {
-        console.error('Demo auth setup error:', e);
-      }
-    }
+    const data = await api.login('demo@agenticats.com', 'Password123!');
+    localStorage.setItem('agentic_ats_token', data.access_token);
+    setUser(data.user);
+    return data.user;
   };
 
   const login = async (email, password) => {
     const data = await api.login(email, password);
+    localStorage.setItem('agentic_ats_token', data.access_token);
+    setUser(data.user);
+    return data.user;
+  };
+
+  const register = async (email, password, fullName) => {
+    const data = await api.register(email, password, fullName);
     localStorage.setItem('agentic_ats_token', data.access_token);
     setUser(data.user);
     return data.user;
@@ -57,7 +62,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, loginDemoUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, loginDemoUser }}>
       {children}
     </AuthContext.Provider>
   );
