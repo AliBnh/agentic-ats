@@ -104,13 +104,16 @@ Return ONLY a valid JSON array:"""
                     new_text = orig
 
             b.tailored = new_text
-            diff_records.append({
-                "bullet_id": b.id,
-                "company": exp.company,
-                "role": exp.role,
-                "original": b.original,
-                "tailored": new_text,
-                "is_changed": b.original.strip() != new_text.strip()
-            })
+            
+            # STRICT GUARD: Only record into diff if the bullet was genuinely modified
+            if b.original.strip() != new_text.strip():
+                diff_records.append({
+                    "bullet_id": b.id,
+                    "company": exp.company,
+                    "role": exp.role,
+                    "original": b.original.strip(),
+                    "tailored": new_text.strip(),
+                    "is_changed": True
+                })
 
     return resume_ast, diff_records

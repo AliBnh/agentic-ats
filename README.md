@@ -366,11 +366,12 @@ The **10 Real-World Scenarios Test Suite** validates end-to-end processing acros
 ## Executive Harvard/McKinsey ATS PDF Specification
 
 The PDF exporter (`backend/app/utils/pdf_exporter.py`) was engineered according to the strictest ATS scanning and typography specifications:
+- **Strict 1-Page Adaptive Engine:** 3-pass intelligent compaction algorithm (spacing, line-height, font scaling) mathematically guarantees single-page fit without awkward 2-page overflows while maintaining single-column ATS readability.
+- **Grouped Skill Taxonomy:** Technical skills are automatically clustered into clean industry categories (e.g., *Languages & Core*, *Frameworks & Fullstack*, *Cloud, DevOps & Infra*, *AI, ML & Data*, *Architecture & Practices*) instead of an unorganized comma-separated wall of text.
 - **Geometry:** 14mm margins for maximum printable real estate without triggering printer edge clipping.
 - **Typography:** Pure clean Helvetica styling, uppercase primary section titles (`EXPERIENCE`, `EDUCATION`, `SKILLS`) with subtle rule dividers.
 - **Bullet Rendering:** Solid round bullets (`chr(149)` / `•`) rendered in pure Latin-1 to eliminate broken character glyphs (`?`).
 - **Hanging Indentation:** Sub-bullets wrap with a precise 5mm hanging indent (text lines never wrap under bullet dots).
-- **Orphan Guard:** Automatic page break if fewer than 42mm remain on the page before rendering an experience block.
 - **Header Cleanliness:** Zero prospective employer names in candidate titles; candidate's professional headline is preserved without company branding.
 - **Dedicated Cover Letter Mode:** Renders formal executive correspondence with 20mm margins, header date block, bold subject line, and balanced paragraph spacing.
 

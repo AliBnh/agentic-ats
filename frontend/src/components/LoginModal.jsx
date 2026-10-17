@@ -13,8 +13,7 @@ import {
   LogIn,
   UserPlus,
   CheckCircle2,
-  Zap,
-  Bot
+  Zap
 } from 'lucide-react';
 
 export const LoginModal = () => {
@@ -92,26 +91,24 @@ export const LoginModal = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 relative overflow-hidden flex flex-col items-center justify-center p-4 sm:p-6 select-none">
-      {/* Background Tech Grid & Luminous Glows */}
-      <div className="tech-grid-bg absolute inset-0 opacity-30 pointer-events-none" />
-      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-brand-500/20 blur-3xl animate-pulse-glow pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-500/20 blur-3xl animate-float-slow pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] rounded-full bg-sky-500/10 blur-[130px] pointer-events-none" />
+    <div className="min-h-screen w-full bg-gradient-to-b from-slate-50 via-slate-100/70 to-slate-100 relative overflow-hidden flex flex-col items-center justify-center p-4 sm:p-6 select-none">
+      {/* Soft Ambient Light Glows */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-brand-200/40 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-100/50 blur-3xl pointer-events-none" />
 
-      {/* Main Elevated Glass Card */}
-      <div className="relative z-10 max-w-md w-full bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/40 p-6 sm:p-8 space-y-6 transition-all duration-300">
+      {/* Main Elevated Clean White Card */}
+      <div className="relative z-10 max-w-md w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200/90 p-6 sm:p-8 space-y-6 transition-all duration-300">
         
-        {/* Header with Pulsing Live Swarm Status */}
+        {/* Header with Live Status Pill */}
         <div className="text-center space-y-2.5">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-900 text-white text-[10px] font-mono tracking-wider shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="text-emerald-400 font-bold">6 AGENTS ACTIVE</span>
-            <span className="text-slate-400">•</span>
-            <span className="text-slate-300">LANGGRAPH SWARM</span>
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-semibold tracking-wide shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>6 Autonomous Agents Active</span>
+            <span className="text-emerald-300">•</span>
+            <span className="text-emerald-800">LangGraph Swarm</span>
           </div>
 
-          <div className="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200/80 text-brand-600 flex items-center justify-center mx-auto shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-brand-50 border border-brand-200/80 text-brand-600 flex items-center justify-center mx-auto shadow-xs">
             <ShieldCheck className="w-6 h-6 text-brand-600" />
           </div>
 
@@ -132,7 +129,7 @@ export const LoginModal = () => {
             onClick={() => handleToggleMode('login')}
             className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all duration-200 ${
               mode === 'login'
-                ? 'bg-white text-slate-900 shadow-sm'
+                ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -144,7 +141,7 @@ export const LoginModal = () => {
             onClick={() => handleToggleMode('register')}
             className={`flex-1 py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition-all duration-200 ${
               mode === 'register'
-                ? 'bg-white text-slate-900 shadow-sm'
+                ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -155,15 +152,15 @@ export const LoginModal = () => {
 
         {/* Error / Success Notifications */}
         {error && (
-          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center space-x-2 animate-fade-in">
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center space-x-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold flex items-center space-x-2 animate-fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold flex items-center space-x-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
             <span>{successMsg}</span>
           </div>
         )}
@@ -172,7 +169,7 @@ export const LoginModal = () => {
         {mode === 'login' && (
           <div className="space-y-4">
             {/* 1-Click Demo Login Banner */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-brand-50/90 to-sky-50/70 border border-brand-200/80 space-y-2.5">
+            <div className="p-4 rounded-2xl bg-brand-50/80 border border-brand-200/80 space-y-2.5">
               <div className="flex items-center justify-between text-xs font-bold text-brand-900">
                 <span className="flex items-center space-x-1.5">
                   <UserCheck className="w-4 h-4 text-brand-600" />
@@ -182,15 +179,15 @@ export const LoginModal = () => {
                   10 Audits Ready
                 </span>
               </div>
-              <div className="text-[11px] text-slate-600 font-mono space-y-0.5 bg-white/70 p-2 rounded-lg border border-brand-100">
-                <div>Email: <span className="font-bold text-slate-800">demo@agenticats.com</span></div>
-                <div>Password: <span className="font-bold text-slate-800">Password123!</span></div>
+              <div className="text-[11px] text-slate-600 font-mono space-y-0.5 bg-white/90 p-2.5 rounded-xl border border-brand-100">
+                <div>Email: <span className="font-bold text-slate-900">demo@agenticats.com</span></div>
+                <div>Password: <span className="font-bold text-slate-900">Password123!</span></div>
               </div>
               <button
                 type="button"
                 onClick={handleQuickDemoLogin}
                 disabled={loading}
-                className="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-600/20 flex items-center justify-center space-x-2 transition-all active:scale-[0.98]"
+                className="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold shadow-sm shadow-brand-600/20 flex items-center justify-center space-x-2 transition-all active:scale-[0.98]"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -319,7 +316,7 @@ export const LoginModal = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-brand-600/20 active:scale-[0.98] flex items-center justify-center space-x-2"
+              className="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-brand-600/20 active:scale-[0.98] flex items-center justify-center space-x-2"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -337,11 +334,11 @@ export const LoginModal = () => {
         <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
           <span className="flex items-center space-x-1">
             <Cpu className="w-3 h-3 text-slate-400" />
-            <span>Groq LPU Fast Inference</span>
+            <span>Groq LPU Inference</span>
           </span>
           <span className="flex items-center space-x-1">
             <ShieldCheck className="w-3 h-3 text-slate-400" />
-            <span>Fact-Locked HITL Gate</span>
+            <span>Fact-Locked Truth Gate</span>
           </span>
         </div>
       </div>
