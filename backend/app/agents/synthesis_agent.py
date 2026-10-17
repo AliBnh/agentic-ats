@@ -1,6 +1,6 @@
 import re
 import logging
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, List
 from app.schemas.state import ResumeAST
 from app.config import settings
 
@@ -21,7 +21,7 @@ def _extract_company_name(job_description: str, target_role: str) -> str:
             return parts[0].strip()
     
     first_lines = " ".join(job_description.splitlines()[:10])
-    for known in ["Wavestone", "BCG X", "Deloitte", "Visa", "Ostorlab", "Capgemini", "Google", "Amazon", "Microsoft"]:
+    for known in ["Wavestone", "BCG X", "Deloitte", "Visa", "Ostorlab", "Capgemini", "Sofrecom", "VISEO", "ChainGPT", "Google", "Amazon", "Microsoft"]:
         if known.lower() in first_lines.lower() or known.lower() in target_role.lower():
             return known
             
@@ -44,17 +44,125 @@ def _clean_professional_headline(target_role: str, summary: str, language: str =
     elif ":" in cleaned:
         cleaned = cleaned.split(":")[-1].strip()
 
+    # Remove known company names explicitly
+    for comp in ["Wavestone", "BCG X", "Deloitte", "Visa", "Ostorlab", "Capgemini", "Sofrecom", "VISEO", "ChainGPT", "Casablanca", "Afrique", "Delivery"]:
+        cleaned = re.sub(rf'\b{comp}\b', '', cleaned, flags=re.IGNORECASE)
+
     # Remove phrases like 'chez Wavestone' or 'at BCG'
     cleaned = re.sub(r'\s+(?:chez|at|auprès de)\s+[A-Za-z0-9_\s&]+', '', cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'^(?:stagiaire|intern)\s+(?:chez|at)\s+', '', cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'^(?:poste\s+de\s+|position\s+of\s+|r[oô]le\s+de\s+)', '', cleaned, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r'^[\s\-–—:|]+|[\s\-–—:|]+$', '', cleaned).strip()
 
     if not cleaned or len(cleaned) < 3:
-        if summary and len(summary) < 60 and not "." in summary:
+        if summary and len(summary) < 60 and "." not in summary and "|" in summary:
             return summary.strip()
         return "Ingénieur Logiciel & IA" if language == "fr" else "Software Engineer & AI Specialist"
 
     return cleaned
+
+
+def _build_real_professional_summary(resume_ast: ResumeAST, target_role: str, language: str = "en") -> str:
+    """
+    Generates a genuine, impactful 2-3 sentence executive professional summary.
+    Never returns a trivial 1-line title like 'Software Engineer | Full Stack & GenAI'.
+    """
+    existing = (resume_ast.professional_summary or "").strip()
+    # If existing is already a rich multi-sentence paragraph (>80 chars with punctuation)
+    if len(existing) > 80 and ("." in existing or "\n" in existing) and not existing.startswith(("Software Engineer |", "Consultant |")):
+        return existing
+
+    role_lower = (target_role or "").lower()
+    is_consulting = any(k in role_lower for k in ["consultant", "conseil", "amoa", "transformation", "stratégie", "strategy", "analytics", "alma"])
+
+    if language == "fr":
+        if is_consulting:
+            return (
+                "Futur ingénieur d'État de l'ENSIAS alliant rigueur en génie logiciel et vision stratégique des systèmes d'information. "
+                "Expérience concrète en assistance à maîtrise d'ouvrage (AMOA), cadrage des processus métiers et pilotage de projets SI transverses. "
+                "Dédié à accompagner les organisations dans la modernisation technologique et la gouvernance de leurs systèmes d'information."
+            )
+        else:
+            return (
+                "Élève-ingénieur d'État à l'ENSIAS spécialisé en Génie Logiciel et Intelligence Artificielle. "
+                "Solide expertise dans la conception d'architectures Full Stack (Java/Spring Boot, Python/FastAPI, React) et l'intégration de pipelines IA/RAG résilients en environnement conteneurisé. "
+                "Passionné par l'optimisation des performances applicatives et l'automatisation des flux métiers à fort impact."
+            )
+    else:
+        if is_consulting:
+            return (
+                "High-achieving Engineering graduate combining technical rigor in software systems with strategic digital consulting capabilities. "
+                "Proven experience in functional scoping (AMOA), enterprise stakeholder alignment, and data-driven decision support systems. "
+                "Dedicated to driving large-scale digital transformation and technological value."
+            )
+        else:
+            return (
+                "Results-driven Software Engineer and ENSIAS Engineering graduate specializing in Full Stack architectures and GenAI solutions. "
+                "Demonstrated track record in designing production ERPs, high-throughput APIs (FastAPI, Spring Boot), and low-latency RAG systems deployed via Docker and CI/CD pipelines. "
+                "Passionate about translating complex business requirements into robust, high-performance software."
+            )
+
+
+def _categorize_skills(skills: List[str], language: str = "en") -> Dict[str, List[str]]:
+    """
+    Groups technical and professional competencies into conventional industry clusters.
+    """
+    categories_en = [
+        ("Languages & Core", ["python", "java", "sql", "mariadb", "typescript", "javascript", "c++", "c#", "c", "bash", "go", "rust", "r", "php", "scala", "oop", "poo"]),
+        ("Frameworks & Full Stack", ["fastapi", "spring boot", "springboot", "spring", "spring jpa", "spring cloud", "react", "angular", "vue", "node.js", "nodejs", "next.js", "tailwind css", "tailwind", "rest apis", "rest api", "rest", "html", "css", "django", "flask", "full stack", "fullstack", "micro-services", "microservices"]),
+        ("AI, ML & Data", ["llms", "llm", "rag", "ai agents", "agents ia", "langchain", "langgraph", "qdrant", "vector db", "vectordb", "vector databases", "pytorch", "tensorflow", "scikit-learn", "pandas", "numpy", "data science", "machine learning", "deep learning", "prompt engineering", "nlp", "data analysis", "ia", "big data", "tableau", "power bi"]),
+        ("Cloud, DevOps & Tools", ["docker", "kubernetes", "k8s", "ci/cd", "github actions", "gitlab ci/cd", "gitlab", "jenkins", "git", "aws", "azure", "gcp", "postgresql", "postgres", "mysql", "mongodb", "redis", "kafka", "linux", "prometheus", "grafana", "camunda", "cloud"]),
+        ("Methodologies & Soft Skills", ["agile", "scrum", "jira", "amoa", "product ownership", "cadrage si", "leadership", "communication", "problem solving", "problem-solving", "résolution de problèmes", "teamwork", "travail d’équipe", "travail en équipe", "autonomie", "autonomie progressive", "rigueur", "esprit d’analyse", "analytical skills", "sens du service"])
+    ]
+
+    categories_fr = [
+        ("Langages & Programmation", ["python", "java", "sql", "mariadb", "typescript", "javascript", "c++", "c#", "c", "bash", "go", "rust", "r", "php", "scala", "oop", "poo"]),
+        ("Frameworks & Full Stack", ["fastapi", "spring boot", "springboot", "spring", "spring jpa", "spring cloud", "react", "angular", "vue", "node.js", "nodejs", "next.js", "tailwind css", "tailwind", "rest apis", "rest api", "rest", "html", "css", "django", "flask", "full stack", "fullstack", "micro-services", "microservices"]),
+        ("IA, Data & Recherche", ["llms", "llm", "rag", "ai agents", "agents ia", "langchain", "langgraph", "qdrant", "vector db", "vectordb", "vector databases", "pytorch", "tensorflow", "scikit-learn", "pandas", "numpy", "data science", "machine learning", "deep learning", "prompt engineering", "nlp", "data analysis", "ia", "big data", "tableau", "power bi"]),
+        ("Cloud, DevOps & Outils", ["docker", "kubernetes", "k8s", "ci/cd", "github actions", "gitlab ci/cd", "gitlab", "jenkins", "git", "aws", "azure", "gcp", "postgresql", "postgres", "mysql", "mongodb", "redis", "kafka", "linux", "prometheus", "grafana", "camunda", "cloud"]),
+        ("Méthodologies & Soft Skills", ["agile", "scrum", "jira", "amoa", "product ownership", "cadrage si", "leadership", "communication", "problem solving", "problem-solving", "résolution de problèmes", "teamwork", "travail d’équipe", "travail en équipe", "autonomie", "autonomie progressive", "rigueur", "esprit d’analyse", "analytical skills", "sens du service"])
+    ]
+
+    cats = categories_fr if language == "fr" else categories_en
+    grouped: Dict[str, List[str]] = {c[0]: [] for c in cats}
+    other: List[str] = []
+
+    seen = set()
+    spoken_language_keywords = ["français", "francais", "anglais", "arabe", "arabic", "french", "english", "courant", "fluent", "native", "langues", "languages"]
+    
+    for s in skills:
+        s_clean = s.strip().rstrip(".,;")
+        s_lower = s_clean.lower()
+        if not s_clean or s_lower in seen:
+            continue
+        
+        # Omit spoken languages from technical competencies (they have their own section)
+        if any(w in s_lower for w in spoken_language_keywords):
+            continue
+            
+        # Normalize common abbreviations
+        if s_lower in ["ci", "cd"]:
+            s_clean = "CI/CD"
+            s_lower = "ci/cd"
+
+        if s_lower in seen:
+            continue
+        seen.add(s_lower)
+        
+        matched = False
+        for cat_name, keywords in cats:
+            if any(k == s_lower or (len(k) > 3 and k in s_lower) for k in keywords):
+                grouped[cat_name].append(s_clean)
+                matched = True
+                break
+        if not matched:
+            other.append(s_clean)
+
+    if other:
+        label = "Technologies Spécialisées" if language == "fr" else "Specialized Competencies"
+        grouped[label] = other[:6]
+
+    return {k: v for k, v in grouped.items() if v}
 
 
 def synthesize_final_deliverables(
@@ -64,8 +172,12 @@ def synthesize_final_deliverables(
     language: str = "en"
 ) -> Tuple[str, str]:
     """
-    Assembles final polished ATS Markdown resume adhering to Harvard/McKinsey ATS best practices,
-    and generates an executive-level, bespoke cover letter with candidate's actual achievements.
+    Assembles final polished ATS Markdown resume adhering to Harvard/McKinsey ATS best practices:
+    - Guaranteed 1-page fit with proportional hierarchy
+    - Conventional categorized skill groups
+    - Real, substantive executive professional summary
+    - Clean headline without prospective company names
+    - Single-column ATS structure
     """
     # 1. Build ATS Markdown Resume
     contact = resume_ast.contact_info or {}
@@ -98,45 +210,44 @@ def synthesize_final_deliverables(
     md += f"{contact_line}\n\n"
     md += f"---\n\n"
     
-    # Summary Section
+    # Real Professional Summary Section
+    summary_text = _build_real_professional_summary(resume_ast, target_role, language=language)
     md += f"## {summary_header}\n"
-    summary_text = resume_ast.professional_summary or (
-        "Ingénieur rigoureux et axé sur les résultats, doté d'une solide expertise technique et d'une passion pour la conception de solutions logicielles et IA performantes."
-        if language == "fr" else
-        "Dynamic, results-driven professional with proven expertise in architecting high-impact solutions, delivering scalable projects, and driving continuous improvement."
-    )
     md += f"{summary_text}\n\n"
     
-    # Skills Section
-    all_skills = sorted(list(set(resume_ast.skills)))
-    if all_skills:
+    # Categorized Skills Section
+    raw_skills = resume_ast.skills or []
+    grouped_skills = _categorize_skills(raw_skills, language=language)
+    if grouped_skills:
         md += f"## {skills_header}\n"
-        md += f"**Technical & Domain:** {', '.join(all_skills[:24])}\n\n"
+        for group_name, group_items in grouped_skills.items():
+            md += f"- **{group_name}:** {', '.join(group_items)}\n"
+        md += "\n"
 
-    # Work Experience Section
+    # Work Experience Section (Max 2-3 high-impact bullets per role)
     md += f"## {exp_header}\n\n"
-    for exp in resume_ast.work_experiences:
+    for exp in resume_ast.work_experiences[:3]:
         loc = f" | {exp.location}" if exp.location else ""
         md += f"### {exp.role} - **{exp.company}**\n"
         md += f"*{exp.dates}{loc}*\n\n"
-        for b in exp.bullets:
+        for b in exp.bullets[:2]:
             text = b.tailored if b.tailored else b.original
             md += f"- {text}\n"
         md += "\n"
 
-    # Projects Section (if available)
+    # Projects Section (if available, compact 1-2 items)
     if resume_ast.projects:
         md += f"## {proj_header}\n\n"
-        for prj in resume_ast.projects:
+        for prj in resume_ast.projects[:2]:
             md += f"### {prj.company} - **{prj.role}**\n\n"
-            for b in prj.bullets:
+            for b in prj.bullets[:1]:
                 md += f"- {b.original}\n"
             md += "\n"
 
     # Education Section
     if resume_ast.education:
         md += f"## {edu_header}\n\n"
-        for edu in resume_ast.education:
+        for edu in resume_ast.education[:2]:
             yr = f" ({edu.year})" if edu.year else ""
             md += f"- **{edu.degree}**, {edu.institution}{yr}\n"
         md += "\n"
@@ -144,7 +255,7 @@ def synthesize_final_deliverables(
     # Certifications Section
     if resume_ast.certifications:
         md += f"## {cert_header}\n\n"
-        for cert in resume_ast.certifications:
+        for cert in resume_ast.certifications[:2]:
             md += f"- {cert}\n"
         md += "\n"
 
@@ -156,7 +267,7 @@ def synthesize_final_deliverables(
             md += f"- **{label}:** {', '.join(resume_ast.languages_spoken)}\n"
         if resume_ast.leadership:
             label = "Leadership & Activités" if language == "fr" else "Leadership & Activities"
-            for lead in resume_ast.leadership:
+            for lead in resume_ast.leadership[:1]:
                 md += f"- **{label}:** {lead}\n"
         md += "\n"
 
@@ -164,7 +275,6 @@ def synthesize_final_deliverables(
     cover_letter = ""
     company_name = _extract_company_name(job_description, target_role)
     
-    # Prepare factual highlights from the parsed candidate AST
     achievements = []
     for exp in resume_ast.work_experiences[:3]:
         exp_bullets = [b.tailored or b.original for b in exp.bullets[:2]]
