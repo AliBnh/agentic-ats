@@ -41,15 +41,18 @@ def invoke_text(prompt: str, temperature: float = 0.2) -> str:
 
 def invoke_json_with_images(
     prompt: str,
-    image_data_urls: Sequence[str],
+    image_base64: Sequence[str],
     temperature: float = 0.0,
     model_name: str | None = None,
 ) -> Any:
-    """Invoke the configured vision model with page images and parse JSON output."""
+    """Invoke the configured vision model with base64-encoded page images."""
     from langchain_core.messages import HumanMessage
     from langchain_core.output_parsers import JsonOutputParser
 
     content = [{"type": "text", "text": prompt}]
-    content.extend({"type": "image_url", "image_url": {"url": image}} for image in image_data_urls)
-    message = HumanMessage(content=content)
-    return (get_chat_model(temperature, model_name=model_name) | JsonOutputParser()).invoke(message)
+    content.extend(
+        {"type": "image", "base64": image, "mime_type": "image/png"}
+        for image in image_base64
+    )
+    response = get_chat_model(temperature, model_name=model_name).invoke([HumanMessage(content=content)])
+    return JsonOutputParser().invoke(response)

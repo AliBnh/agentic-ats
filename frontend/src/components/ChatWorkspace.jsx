@@ -8,7 +8,6 @@ import {
   Paperclip,
   ShieldAlert,
   Sparkles,
-  User,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { Badge } from '@/components/ui/badge';
@@ -32,22 +31,12 @@ function Message({ role, children }) {
   const userMessage = role === 'user';
   return (
     <article className={`flex gap-3 ${userMessage ? 'justify-end' : 'justify-start'}`}>
-      {!userMessage && (
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Sparkles />
-        </span>
-      )}
       <section className={`flex min-w-0 max-w-3xl flex-col gap-1 ${userMessage ? 'items-end' : 'items-start'}`}>
-        <span className="px-1 text-xs font-medium text-muted-foreground">
+        <span className="px-1 text-xs text-muted-foreground">
           {userMessage ? 'You' : 'Resume Copilot'}
         </span>
         {children}
       </section>
-      {userMessage && (
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-          <User />
-        </span>
-      )}
     </article>
   );
 }
@@ -59,7 +48,7 @@ function ActivityTrace({ events, loading }) {
   const progress = Math.min(100, Math.max(8, Math.round((nodeEvents.length / 5) * 100)));
 
   return (
-    <Card className="w-full border-border/80">
+    <Card className="w-full">
       <CardHeader className="gap-3 pb-3">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-sm">
@@ -93,7 +82,7 @@ function ActivityTrace({ events, loading }) {
 
 function ResumeComposer({ text, file, busy, onTextChange, onFileChange, onSubmit }) {
   return (
-    <Card className="w-full border-border/80 shadow-sm">
+    <Card className="w-full">
       <CardContent className="p-3">
         {file && (
           <Badge variant="secondary" className="mb-2 gap-2">
@@ -135,7 +124,7 @@ function ResumeComposer({ text, file, busy, onTextChange, onFileChange, onSubmit
 
 function JobComposer({ role, description, busy, onRoleChange, onDescriptionChange, onSubmit }) {
   return (
-    <Card className="w-full border-border/80 shadow-sm">
+    <Card className="w-full">
       <CardContent className="flex flex-col gap-2 p-3">
         <Input
           value={role}
@@ -168,7 +157,7 @@ function VerificationCard({ data, loading, onResolve }) {
   if (!question) return null;
 
   return (
-    <Card className="w-full border-amber-500/40 bg-amber-500/5">
+    <Card className="w-full">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm">
           <ShieldAlert className="text-amber-600 dark:text-amber-400" />
@@ -264,14 +253,10 @@ export function ChatWorkspace({
   return (
     <div className="mx-auto flex h-full w-full max-w-4xl flex-col">
       <header className="flex items-center gap-3 border-b border-border/70 px-4 py-4 sm:px-6">
-        <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Sparkles />
-        </span>
         <div>
-          <h1 className="text-sm font-semibold">Resume Copilot</h1>
-          <p className="text-xs text-muted-foreground">A focused workspace for one resume at a time</p>
+        <h1 className="text-sm font-semibold">Resume Copilot</h1>
+        <p className="text-xs text-muted-foreground">One focused workspace for your next application</p>
         </div>
-        <Badge variant="outline" className="ml-auto hidden sm:flex">LangGraph</Badge>
       </header>
 
       <main className="min-h-0 flex-1 overflow-y-auto px-4 py-8 sm:px-6">
@@ -308,7 +293,7 @@ export function ChatWorkspace({
 
           {diagnosticReport && (
             <Message role="assistant">
-              <Card className="w-full border-border/80">
+              <Card className="w-full">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm">Baseline audit complete</CardTitle>
@@ -360,7 +345,7 @@ export function ChatWorkspace({
           )}
 
           <Separator />
-          <p className="pb-4 text-center text-xs text-muted-foreground">Observable workflow updates are shown as agents work. Private hidden reasoning is not exposed.</p>
+          <p className="pb-4 text-center text-xs text-muted-foreground">Workflow steps are shown as your application is prepared.</p>
         </div>
       </main>
     </div>

@@ -1,6 +1,5 @@
 import base64
 import io
-import logging
 import re
 from typing import Any, Dict, Tuple
 
@@ -8,8 +7,7 @@ from app.agents.resume_text_parser import parse_resume_to_ast
 from app.config import settings
 from app.core.llm import invoke_json_with_images
 from app.prompts import resume_vision_parser_prompt
-
-logger = logging.getLogger(__name__)
+from app.schemas.state import ResumeAST
 
 try:
     import pdfplumber
@@ -77,11 +75,11 @@ def _page_images(file_bytes: bytes) -> list[str]:
             buffer = io.BytesIO()
             rendered.save(buffer, format="PNG", optimize=True)
             encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
-            images.append(f"data:image/png;base64,{encoded}")
+            images.append(encoded)
     return images
 
 
-def parse_pdf_to_ast(file_bytes: bytes, language: str = "en"):
+def parse_pdf_to_ast(file_bytes: bytes, language: str = "en") -> ResumeAST:
     """Render every page and parse the complete resume with the vision model."""
     images = _page_images(file_bytes)
     if not images:

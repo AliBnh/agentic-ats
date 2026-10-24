@@ -1,14 +1,10 @@
 import io
 import re
-import json
 import logging
-import base64
 from typing import Dict, Any, Tuple, List, Optional
 from app.schemas.state import ResumeAST, WorkExperienceItem, BulletPoint, EducationItem
-from app.config import settings
-from app.core.llm import invoke_json, invoke_json_with_images
-from app.prompts import resume_parser_prompt, resume_vision_parser_prompt
-from app.utils.language_detector import detect_language
+from app.core.llm import invoke_json
+from app.prompts import resume_parser_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -607,28 +603,3 @@ def parse_resume_to_ast(
     # High-precision deterministic fallback
     logger.info("Using high-precision deterministic section parser.")
     return _parse_resume_deterministically(raw_text, language=language)
-
-
-def parse_pdf_to_ast(file_bytes: bytes, language: str = "en") -> ResumeAST:
-    """Render every PDF page and parse the document with the configured vision model."""
-    if not PDFPLUMBER_AVAILABLE:
-        raise RuntimeError("pdfplumber is required for vision-based PDF parsing.")
-
-    image_data_urls = []
-    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-        for page in pdf.pages:
-            image = page.to_image(resolution=144).original
-            buffer = io.BytesIO()
-            image.save(buffer, format="PNG", optimize=True)
-            encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
-            image_data_urls.append(f"data:image/png;base64,{encoded}")
-
-    if not image_data_urls:
-        raise RuntimeError("The PDF contains no renderable pages.")
-
-    data = invoke_json_with_images(
-        resume_vision_parser_prompt(language, len(image_data_urls)),
-        image_data_urls,
-        model_name=settings.PARSER_MODEL_NAME,
-    )
-    return parse_resume_to_ast("", language, parsed_data=data, allow_fallback=False)

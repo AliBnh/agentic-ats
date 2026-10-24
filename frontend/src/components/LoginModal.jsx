@@ -114,17 +114,12 @@ export const LoginModal = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-background relative overflow-hidden flex flex-col items-center justify-center p-4 sm:p-6 select-none tech-grid-bg">
-      {/* Soft Ambient Light Glows */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-brand-500/15 blur-3xl pointer-events-none" />
-
-      {/* Main Elevated Card */}
-      <Card className="relative z-10 max-w-md w-full shadow-2xl border-border/80 bg-card/95 backdrop-blur-xl">
+    <div className="flex min-h-screen w-full items-center justify-center bg-background p-4 sm:p-6">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-3 pb-4">
           <div className="flex justify-center">
             <Badge
-              variant="brand"
+              variant="secondary"
               className="gap-2 py-1 px-3 text-[11px] font-semibold tracking-wide"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -134,8 +129,8 @@ export const LoginModal = () => {
             </Badge>
           </div>
 
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600 via-primary to-indigo-600 text-white flex items-center justify-center mx-auto shadow-md shadow-brand-500/25">
-            <Sparkles className="w-6 h-6" />
+          <div className="mx-auto flex size-10 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <Sparkles />
           </div>
 
           <div>
@@ -201,7 +196,7 @@ export const LoginModal = () => {
                     <UserCheck className="w-4 h-4 text-primary" />
                     <span>Pre-Seeded Demo Candidate</span>
                   </span>
-                  <Badge variant="brand" className="font-mono text-[10px]">
+                  <Badge variant="secondary" className="font-mono text-[10px]">
                     10 Audits Ready
                   </Badge>
                 </div>
@@ -225,8 +220,8 @@ export const LoginModal = () => {
                   type="button"
                   onClick={handleQuickDemoLogin}
                   disabled={loading}
-                  variant="brand"
-                  className="w-full font-bold text-xs gap-1.5 py-2.5 h-10 shadow-sm shadow-brand-600/20 active:scale-95 transition-all"
+                  variant="default"
+                  className="h-10 w-full gap-1.5 text-xs"
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -384,8 +379,8 @@ export const LoginModal = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                variant="brand"
-                className="w-full text-xs font-bold py-2.5 h-10 gap-1.5"
+                variant="default"
+                className="h-10 w-full gap-1.5 py-2.5 text-xs"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

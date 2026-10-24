@@ -9,14 +9,14 @@ export const Navbar = ({ activeThread, onToggleSidebar }) => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/70 bg-background px-3 sm:px-5">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background px-3 sm:px-5">
       <div className="flex min-w-0 items-center gap-2">
         <Button variant="ghost" size="icon" className="md:hidden" onClick={onToggleSidebar} aria-label="Open conversations">
           <Menu />
         </Button>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{activeThread?.title || 'New resume audit'}</p>
-          <p className="text-[11px] text-muted-foreground">Resume Copilot</p>
+          <p className="text-xs text-muted-foreground">Resume audit</p>
         </div>
         {activeThread?.language && (
           <Badge variant="secondary" className="hidden uppercase sm:inline-flex">

@@ -72,7 +72,7 @@ export const DiffViewer = ({ diff = [] }) => {
             <span className="text-xs font-bold uppercase tracking-wider text-foreground">
               STAR Bullet Optimizations ({genuineDiffs.length})
             </span>
-            <Badge variant="brand" className="text-[10px] font-mono px-2 py-0">
+            <Badge variant="secondary" className="px-2 py-0 font-mono text-[10px]">
               Zero Hallucinations
             </Badge>
           </div>

@@ -197,13 +197,13 @@ export const StudioEditor = ({
 
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="max-w-6xl mx-auto space-y-6 animate-fadeIn">
+      <div className="mx-auto flex max-w-6xl flex-col gap-6">
         {/* Top Executive Banner */}
-        <Card className="p-6 border-border/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6 bg-card/60 backdrop-blur-md">
-          <div className="space-y-2.5 text-center md:text-left">
-            <div className="inline-flex items-center space-x-2 flex-wrap gap-1">
-              <Badge variant="success" className="gap-1.5 py-1 px-3 text-xs uppercase tracking-wider font-bold">
-                <Sparkles className="w-3.5 h-3.5" />
+        <Card className="flex flex-col items-center justify-between gap-6 p-6 md:flex-row">
+          <div className="flex flex-col gap-2.5 text-center md:text-left">
+            <div className="inline-flex flex-wrap items-center gap-1">
+              <Badge variant="secondary" className="gap-1.5 px-3 py-1 text-xs uppercase tracking-wider">
+                <Sparkles />
                 <span>Autonomous Optimization Complete</span>
               </Badge>
               <Badge variant="outline" className="text-xs font-mono">
@@ -230,14 +230,14 @@ export const StudioEditor = ({
         </Card>
 
         {/* Main Studio Workbench */}
-        <Card className="overflow-hidden border-border/80 shadow-sm flex flex-col h-[780px]">
+        <Card className="flex h-[780px] flex-col overflow-hidden">
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
             className="flex-1 flex flex-col h-full"
           >
             {/* Top Toolbar */}
-            <div className="px-4 py-2.5 bg-muted/40 border-b border-border/80 flex items-center justify-between flex-wrap gap-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2.5 border-b bg-muted/40 px-4 py-2.5">
               <TabsList className="bg-muted/80">
                 <TabsTrigger value="editor" className="gap-1.5 text-xs font-semibold">
                   <Edit3 className="w-3.5 h-3.5 text-primary" />
@@ -245,12 +245,12 @@ export const StudioEditor = ({
                 </TabsTrigger>
 
                 <TabsTrigger value="diff" className="gap-1.5 text-xs font-semibold">
-                  <Eye className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <Eye />
                   <span>STAR Bullet Diff</span>
                 </TabsTrigger>
 
                 <TabsTrigger value="cover_letter" className="gap-1.5 text-xs font-semibold">
-                  <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <FileText />
                   <span>Executive Cover Letter</span>
                 </TabsTrigger>
               </TabsList>
@@ -345,7 +345,7 @@ export const StudioEditor = ({
                   className="gap-1.5 text-xs h-8 bg-card"
                 >
                   {copied ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <Check />
                   ) : (
                     <Copy className="w-3.5 h-3.5" />
                   )}
@@ -356,7 +356,7 @@ export const StudioEditor = ({
                   size="sm"
                   onClick={handleDownloadPdf}
                   disabled={exportingPdf}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-1.5 h-8 shadow-sm shadow-emerald-600/20 active:scale-95 transition-all"
+                  className="gap-1.5 text-xs"
                 >
                   {exportingPdf ? (
                     <>
@@ -481,7 +481,7 @@ export const StudioEditor = ({
           </Button>
 
           <span className="text-[11px] text-muted-foreground font-mono">
-            Deterministic Output // Fact-Locked by Groq & LangGraph
+            Fact-checked output
           </span>
         </div>
       </div>

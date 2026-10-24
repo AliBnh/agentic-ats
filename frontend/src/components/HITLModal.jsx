@@ -129,7 +129,7 @@ export const HITLModal = ({
                 }`}
               >
                 <div className="flex items-start space-x-3">
-                  <div className="mt-0.5 w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                  <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
                     <Sparkles className="w-3 h-3" />
                   </div>
                   <div className="text-xs space-y-0.5">
@@ -190,8 +190,8 @@ export const HITLModal = ({
             <Button
               type="submit"
               disabled={loading}
-              variant="brand"
-              className="w-full py-3 h-11 font-bold text-sm shadow-sm shadow-brand-600/20 gap-2 active:scale-[0.99] transition-all"
+              variant="default"
+              className="h-11 w-full gap-2 text-sm"
             >
               {loading ? (
                 <>
