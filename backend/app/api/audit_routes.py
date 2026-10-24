@@ -1,5 +1,6 @@
 import json
 import logging
+import asyncio
 from typing import Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Response
 from fastapi.responses import StreamingResponse
@@ -11,10 +12,11 @@ from app.models.thread import AuditThread
 from app.models.resume import ResumeRecord, AuditReport, TailoredVersion
 from app.core.security import get_current_user
 from app.core.graph import ats_graph, global_checkpointer
-from app.agents.pdf_parser import extract_text_from_pdf, parse_resume_to_ast
+from app.agents.pdf_parser import extract_text_from_pdf, parse_pdf_to_ast, parse_resume_to_ast
 from app.utils.language_detector import detect_language
 from app.utils.pdf_exporter import generate_ats_pdf
 from app.schemas.audit import JobMatchRequest, HITLResumeRequest
+from app.schemas.state import ResumeAST
 from app.core.metrics import (
     ATS_AUDITS_TOTAL,
     ATS_MATCHES_TOTAL,
@@ -28,6 +30,106 @@ router = APIRouter(prefix="/api/audit", tags=["Audit & Optimization"])
 
 # In-memory thread active states dictionary for fast SSE & state bridging
 ACTIVE_GRAPH_STATES: Dict[str, Dict[str, Any]] = {}
+
+
+def _sse_event(payload: Dict[str, Any]) -> str:
+    return f"data: {json.dumps(payload, default=str)}\n\n"
+
+
+@router.post("/match-job/stream")
+async def stream_match_job(
+    request: JobMatchRequest,
+    current_user: Optional[User] = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Stream each LangGraph node update for a live frontend activity view."""
+    thread_id = request.thread_id
+    current_state = ACTIVE_GRAPH_STATES.get(thread_id)
+    if not current_state:
+        thread = db.query(AuditThread).filter(AuditThread.id == thread_id).first()
+        resume_rec = (
+            db.query(ResumeRecord)
+            .filter(ResumeRecord.thread_id == thread_id)
+            .order_by(ResumeRecord.created_at.desc())
+            .first()
+        )
+        if not thread or not resume_rec:
+            raise HTTPException(status_code=404, detail="Active audit thread not found.")
+        current_state = {
+            "thread_id": thread_id,
+            "user_id": current_user.id if current_user else "demo-user",
+            "raw_resume": resume_rec.raw_text,
+            "language": resume_rec.language,
+            "resume_ast": resume_rec.parsed_json or parse_resume_to_ast(resume_rec.raw_text, resume_rec.language).model_dump(),
+            "health_score": 75.0,
+            "ats_formatting_score": 80.0,
+            "content_impact_score": 70.0,
+            "language_norm_score": 80.0,
+            "audit_issues": [],
+            "job_description": "",
+            "target_role": "",
+            "required_skills": [],
+            "matched_skills": [],
+            "missing_critical_skills": [],
+            "ats_score": 0.0,
+            "score_history": [],
+            "iteration_count": 0,
+            "max_iterations": 3,
+            "hitl_pending": False,
+            "hitl_question": None,
+            "verified_skills": {},
+            "tailored_markdown": "",
+            "cover_letter": "",
+            "diff": [],
+            "status": "AUDITED",
+        }
+
+    current_state["job_description"] = request.job_description
+    current_state["target_role"] = request.target_role or "Target Role"
+    current_state["status"] = "MATCHING"
+
+    async def events():
+        state = dict(current_state)
+        try:
+            config = {"configurable": {"thread_id": thread_id}}
+            async for update in ats_graph.astream(state, config=config, stream_mode="updates"):
+                node_name = next(iter(update), "graph")
+                node_update = update.get(node_name, {})
+                state.update(node_update)
+                yield _sse_event({
+                    "type": "node",
+                    "node": node_name,
+                    "status": state.get("status"),
+                    "update": node_update,
+                })
+                await asyncio.sleep(0)
+
+            ACTIVE_GRAPH_STATES[thread_id] = state
+            if state.get("hitl_pending"):
+                yield _sse_event({
+                    "type": "hitl",
+                    "result": {
+                        "thread_id": thread_id,
+                        "status": "AWAITING_HITL",
+                        "hitl_pending": True,
+                        "hitl_question": state.get("hitl_question"),
+                        "current_score": state.get("ats_score"),
+                        "matched_skills": state.get("matched_skills"),
+                        "missing_skills": state.get("missing_critical_skills"),
+                    },
+                })
+                return
+
+            yield _sse_event({"type": "complete", "result": _save_and_return_tailored_result(state, db)})
+        except Exception as exc:
+            logger.exception("Streaming job match failed for thread %s", thread_id)
+            yield _sse_event({"type": "error", "message": str(exc)})
+
+    return StreamingResponse(events(), media_type="text/event-stream", headers={
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+    })
 
 @router.post("/upload")
 async def upload_resume(
@@ -60,6 +162,7 @@ async def upload_resume(
     extracted_text = ""
     metadata = {}
     filename = ""
+    parsed_ast = None
 
     if file:
         filename = file.filename
@@ -83,6 +186,12 @@ async def upload_resume(
 
     # Detect language
     lang, conf = detect_language(extracted_text)
+    if file:
+        try:
+            parsed_ast = parse_pdf_to_ast(file_bytes, language=lang)
+        except Exception as exc:
+            logger.exception("Vision PDF parsing failed for %s", filename)
+            raise HTTPException(status_code=422, detail=f"Unable to parse the PDF with the configured vision model: {exc}") from exc
     thread.language = lang
     thread.title = filename or f"Resume Audit ({lang.upper()})"
     db.commit()
@@ -95,7 +204,8 @@ async def upload_resume(
         "extracted_text": extracted_text,
         "detected_language": lang,
         "language_confidence": conf,
-        "parsing_metadata": metadata
+        "parsing_metadata": metadata,
+        "parsed_ast": parsed_ast.model_dump() if parsed_ast else None,
     }
 
 
@@ -112,6 +222,7 @@ def confirm_parsing(
     thread_id = payload.get("thread_id")
     verified_text = payload.get("verified_text", "")
     language = payload.get("language", "en")
+    parsed_ast = payload.get("parsed_ast")
 
     if not thread_id or not verified_text:
         raise HTTPException(status_code=400, detail="thread_id and verified_text are required.")
@@ -121,7 +232,7 @@ def confirm_parsing(
         raise HTTPException(status_code=404, detail="Thread not found.")
 
     # Parse into structured Pydantic AST
-    resume_ast = parse_resume_to_ast(verified_text, language=language)
+    resume_ast = ResumeAST(**parsed_ast) if parsed_ast else parse_resume_to_ast(verified_text, language=language)
 
     # Initialize LangGraph state
     initial_state = {

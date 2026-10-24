@@ -14,8 +14,10 @@ class Settings(BaseSettings):
     JWT_SECRET: str = os.getenv("JWT_SECRET", "super_secret_jwt_key_agentic_ats_prod_2026_secure")
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
-    GROQ_PRIMARY_MODEL: str = os.getenv("GROQ_PRIMARY_MODEL", "openai/gpt-oss-120b")
-    GROQ_FAST_MODEL: str = os.getenv("GROQ_FAST_MODEL", "openai/gpt-oss-20b")
+    MODEL_PROVIDER: str = os.getenv("MODEL_PROVIDER", "groq")
+    MODEL_NAME: str = os.getenv("MODEL_NAME", "openai/gpt-oss-20b")
+    PARSER_MODEL_NAME: str = os.getenv("PARSER_MODEL_NAME", "qwen/qwen3.8-27b")
+    MODEL_TEMPERATURE: float = float(os.getenv("MODEL_TEMPERATURE", "0.0"))
 
     # LangSmith Observability & Tracing
     LANGCHAIN_TRACING_V2: str = os.getenv("LANGCHAIN_TRACING_V2", "false")
@@ -28,4 +30,3 @@ class Settings(BaseSettings):
         extra = "allow"
 
 settings = Settings()
-

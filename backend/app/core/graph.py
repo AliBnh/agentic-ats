@@ -119,7 +119,7 @@ def conditional_check_hitl(state: AgenticATSState) -> Literal["node_tailor_bulle
 
 def node_tailor_bullets(state: AgenticATSState) -> Dict[str, Any]:
     """Node 4: Rewrites bullet points to improve STAR compliance & embed verified keywords."""
-    logger.info("Executing Node: STAR Bullet Point Tailoring (Groq Llama 3.3)")
+    logger.info("Executing Node: STAR Bullet Point Tailoring")
     ast_dict = state.get("resume_ast") or {}
     resume_ast = ResumeAST(**ast_dict)
 

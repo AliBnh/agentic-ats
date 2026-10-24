@@ -2,16 +2,10 @@ import re
 import logging
 from typing import Dict, Any, Tuple, List
 from app.schemas.state import ResumeAST
-from app.config import settings
+from app.core.llm import invoke_text
+from app.prompts import cover_letter_prompt
 
 logger = logging.getLogger(__name__)
-
-try:
-    from langchain_groq import ChatGroq
-    GROQ_AVAILABLE = True
-except ImportError:
-    GROQ_AVAILABLE = False
-
 
 def _extract_company_name(job_description: str, target_role: str) -> str:
     """Extracts target company name from title or job description text."""
@@ -402,47 +396,20 @@ def synthesize_final_deliverables(
     edu_summary = " ; ".join([f"{e.degree} ({e.institution})" for e in resume_ast.education[:2]])
     skills_summary = ", ".join(resume_ast.skills[:12])
 
-    if GROQ_AVAILABLE and settings.GROQ_API_KEY:
-        try:
-            llm = ChatGroq(
-                groq_api_key=settings.GROQ_API_KEY,
-                model_name=settings.GROQ_PRIMARY_MODEL,
-                temperature=0.25
-            )
-            lang_instruction = "in impeccable professional French" if language == "fr" else "in executive, compelling English"
-
-            prompt = f"""You are an elite Executive Career Coach specializing in high-conversion cover letters for top-tier consulting firms and global tech leaders.
-Write a bespoke, highly convincing 4-paragraph cover letter {lang_instruction} tailored precisely to this candidate and job.
-
-Candidate Facts:
-- Full Name: {resume_ast.full_name}
-- Contact: {contact_line}
-- Education: {edu_summary}
-- Target Role: {target_role}
-- Target Company: {company_name}
-- Core Stack & Skills: {skills_summary}
-- Proven Accomplishments:
-{chr(10).join(['  * ' + a for a in achievements])}
-
-Target Job Excerpt:
-{job_description[:1200]}
-
-MANDATORY COVER LETTER STRUCTURE:
-1. Header: Candidate coordinates, Target Company ({company_name}), and Date.
-2. Subject Line: "Objet : Candidature au poste de {target_role}" (French) or "Subject: Application for {target_role} - {resume_ast.full_name}" (English).
-3. Salutation: "Madame, Monsieur," or "Dear Hiring Team,".
-4. Paragraph 1 (The Hook): State enthusiastic motivation for {company_name}'s specific mission and introduce candidate's current status and degree.
-5. Paragraph 2 (Proven Evidence & Quantified Impact): Directly highlight 2 concrete achievements from past internships/projects with exact numbers (%, latency, volume) proving technical and operational excellence.
-6. Paragraph 3 (Strategic Fit): Explain how candidate's unique blend of technical expertise ({skills_summary}) and problem-solving mindset directly addresses the challenges outlined in the job description.
-7. Paragraph 4 (Call to Action & Professional Closing): Confident request for an interview followed by formal, polite French or English closing.
-
-DO NOT use generic clichés. Ground every paragraph in the candidate's real experiences and the company's real requirements.
-Return ONLY the complete letter text:"""
-
-            response = llm.invoke(prompt)
-            cover_letter = response.content.strip()
-        except Exception as e:
-            logger.warning(f"Groq cover letter generation failed: {e}")
+    try:
+        cover_letter = invoke_text(cover_letter_prompt(
+            resume_ast.full_name,
+            contact_line,
+            edu_summary,
+            target_role,
+            company_name,
+            skills_summary,
+            achievements,
+            job_description,
+            language,
+        ), temperature=0.25)
+    except Exception as e:
+        logger.warning("Configured model cover letter call failed: %s", e)
 
     if not cover_letter:
         salutation = "Madame, Monsieur," if language == "fr" else "Dear Hiring Team,"

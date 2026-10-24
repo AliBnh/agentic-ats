@@ -1,18 +1,11 @@
 import re
-import json
 import logging
 from typing import Dict, List, Any, Tuple
 from app.schemas.state import ResumeAST, WorkExperienceItem, BulletPoint
-from app.config import settings
+from app.core.llm import invoke_json
+from app.prompts import tailoring_prompt
 
 logger = logging.getLogger(__name__)
-
-try:
-    from langchain_groq import ChatGroq
-    GROQ_AVAILABLE = True
-except ImportError:
-    GROQ_AVAILABLE = False
-
 
 def tailor_resume_bullets(
     resume_ast: ResumeAST,
@@ -24,7 +17,7 @@ def tailor_resume_bullets(
 ) -> Tuple[ResumeAST, List[Dict[str, Any]]]:
     """
     Rewrites bullet points to align with JD while preserving fact-locked dates, titles, and companies.
-    Uses Groq Llama 3.3 70B for synthesis.
+    Uses the configured LangChain model with a deterministic fallback.
     """
     diff_records = []
 
@@ -47,47 +40,19 @@ def tailor_resume_bullets(
 
     tailored_map = {}
 
-    if GROQ_AVAILABLE and settings.GROQ_API_KEY:
-        try:
-            llm = ChatGroq(
-                groq_api_key=settings.GROQ_API_KEY,
-                model_name=settings.GROQ_PRIMARY_MODEL,
-                temperature=0.2
-            )
-
-            lang_instruction = "in professional French" if language == "fr" else "in professional English"
-
-            prompt = f"""You are an elite Executive Career Strategist and ATS Specialist.
-Your task is to refine and strengthen the candidate's experience bullet points to strongly align with the target role and job description.
-
-Target Role: {target_role or 'Senior Specialist'}
-Target Skills to prioritize: {', '.join(approved_skills[:12])}
-Language: Write {lang_instruction}.
-
-NON-NEGOTIABLE CONSTRAINTS:
-1. Do NOT invent fake employers or change dates.
-2. Structure every rewritten bullet with the STAR method (Strong Action Verb + Context + Quantifiable Metric/Result).
-3. If an original bullet lacks numbers, quantify reasonably based on scope (e.g. 'reduced latency by 35%', 'scaled to 50k+ requests/day').
-4. Return a strict JSON array of objects with 'id' and 'tailored'.
-
-Bullets to Rewrite:
-{json.dumps(bullets_to_optimize[:8], indent=2)}
-
-Return ONLY a valid JSON array:"""
-
-            response = llm.invoke(prompt)
-            content = response.content.strip()
-            if content.startswith("```"):
-                content = re.sub(r"^```(?:json)?\n?", "", content)
-                content = re.sub(r"\n?```$", "", content)
-
-            data = json.loads(content)
+    try:
+        data = invoke_json(tailoring_prompt(
+            bullets_to_optimize,
+            target_role,
+            approved_skills,
+            language,
+        ))
+        if isinstance(data, list):
             for item in data:
                 if isinstance(item, dict) and "id" in item and "tailored" in item:
                     tailored_map[item["id"]] = item["tailored"]
-
-        except Exception as e:
-            logger.warning(f"Groq tailoring call failed: {e}. Using deterministic STAR rewriter fallback.")
+    except Exception as e:
+        logger.warning("Configured model tailoring call failed: %s. Using deterministic fallback.", e)
 
     # Apply tailored bullets or fallback enhancements
     for exp in resume_ast.work_experiences:
