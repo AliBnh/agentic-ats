@@ -194,7 +194,7 @@ export const LoginModal = () => {
                 <div className="flex items-center justify-between text-xs font-bold text-foreground">
                   <span className="flex items-center space-x-1.5">
                     <UserCheck className="w-4 h-4 text-primary" />
-                    <span>Pre-Seeded Demo Candidate</span>
+                    <span>Demo User</span>
                   </span>
                   <Badge variant="secondary" className="font-mono text-[10px]">
                     10 Audits Ready
@@ -228,7 +228,7 @@ export const LoginModal = () => {
                   ) : (
                     <>
                       <Zap className="w-3.5 h-3.5 fill-current" />
-                      <span>1-Click Launch as Demo Candidate</span>
+                      <span>1-Click Launch as Demo User</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </>
                   )}
@@ -319,7 +319,7 @@ export const LoginModal = () => {
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g. Ali Benhima"
+                    placeholder="e.g. Demo User"
                     className="pl-9 text-xs h-10 bg-muted/20 focus-visible:bg-background"
                   />
                 </div>

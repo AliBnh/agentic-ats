@@ -124,6 +124,29 @@ function Dashboard() {
     setHitlData(null);
   };
 
+  const handleLoadSampleResume = (resumeId) => {
+    const resume = sampleCatalog?.sample_resumes?.find((item) => item.id === resumeId);
+    if (!resume) return;
+    setPrefilledText(resume.raw_text);
+    setPrefilledLang(resume.language);
+    setPrefilledJdText('');
+    setPrefilledRole('');
+    setDiagnosticReport(null);
+    setTailoredResult(null);
+    setHitlData(null);
+    setAgentEvents([]);
+  };
+
+  const handleLoadSampleJob = (jdId) => {
+    const job = sampleCatalog?.sample_jds?.find((item) => item.id === jdId);
+    if (!job) return;
+    setPrefilledJdText(job.text);
+    setPrefilledRole(job.title);
+    setTailoredResult(null);
+    setHitlData(null);
+    setAgentEvents([]);
+  };
+
   const handleParsedConfirmed = (reportData) => {
     if (reportData?.thread_id) setActiveThreadId(reportData.thread_id);
     setDiagnosticReport(reportData);
@@ -158,6 +181,24 @@ function Dashboard() {
     try {
       const result = await api.resumeHITL(activeThreadId, skill, decision, notes);
       setHitlData(null);
+      if (!result.hitl_pending) {
+        setAgentEvents((previous) => [
+          ...previous,
+          { type: 'agent_start', node: 'node_tailor_bullets' },
+          {
+            type: 'agent_complete',
+            node: 'node_tailor_bullets',
+            summary: `${result.diff?.length || 0} bullet(s) improved`,
+          },
+          { type: 'agent_start', node: 'node_synthesis' },
+          {
+            type: 'agent_complete',
+            node: 'node_synthesis',
+            summary: 'Resume and cover letter are ready',
+          },
+          { type: 'complete' },
+        ]);
+      }
       setTailoredResult(result);
       fetchThreads();
     } catch (err) {
@@ -204,6 +245,8 @@ function Dashboard() {
             prefilledLang={prefilledLang}
             prefilledJdText={prefilledJdText}
             prefilledRole={prefilledRole}
+            onLoadSampleResume={handleLoadSampleResume}
+            onLoadSampleJob={handleLoadSampleJob}
             onParsedConfirmed={handleParsedConfirmed}
             onProceedToMatching={() => {}}
             onStartRemediation={handleStartRemediation}

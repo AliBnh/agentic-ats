@@ -55,6 +55,39 @@ def audit_resume_health(resume_ast: ResumeAST, raw_text: str, language: str = "e
             description="The ATS parser could not identify standard professional experience entries.",
             recommendation="Use recognized headers like 'Professional Experience' or 'Expérience Professionnelle'."
         ))
+    else:
+        experiences_without_bullets = sum(
+            not experience.bullets for experience in resume_ast.work_experiences
+        )
+        if experiences_without_bullets:
+            ats_score -= min(20.0, experiences_without_bullets * 10.0)
+            issues.append(AuditIssue(
+                category="STRUCTURE",
+                severity="WARNING",
+                title="Experience Entries Need Detail",
+                description=f"{experiences_without_bullets} experience entry(ies) have no readable achievement bullets.",
+                recommendation="Add concise accomplishment bullets beneath every professional experience."
+            ))
+
+    if not resume_ast.professional_summary.strip():
+        ats_score -= 10.0
+        issues.append(AuditIssue(
+            category="STRUCTURE",
+            severity="WARNING",
+            title="Professional Summary Missing",
+            description="No professional summary was detected.",
+            recommendation="Add a two- or three-line summary focused on your target role and strongest evidence."
+        ))
+
+    if not resume_ast.skills:
+        ats_score -= 10.0
+        issues.append(AuditIssue(
+            category="ATS_FORMATTING",
+            severity="WARNING",
+            title="Skills Section Missing",
+            description="No explicit skills were detected for keyword matching.",
+            recommendation="Include a concise skills section using the exact terminology relevant to your experience."
+        ))
 
     # 2. Content & Impact Audit (35 points)
     content_score = 100.0
@@ -67,7 +100,16 @@ def audit_resume_health(resume_ast: ResumeAST, raw_text: str, language: str = "e
     bullets_with_metrics = [b for b in all_bullets if re.search(r'(\d+[\d,.]*|\d+%\s*|\$\d+)', b)]
     metric_ratio = len(bullets_with_metrics) / max(1, len(all_bullets))
     
-    if metric_ratio < 0.30:
+    if not all_bullets:
+        content_score -= 45.0
+        issues.append(AuditIssue(
+            category="CONTENT_IMPACT",
+            severity="CRITICAL",
+            title="No Achievement Bullets Found",
+            description="The resume contains no readable work-experience achievements to evaluate.",
+            recommendation="Describe the actions you took, the scope of the work, and the resulting outcome."
+        ))
+    elif metric_ratio < 0.30:
         deduction = 25.0 if metric_ratio < 0.15 else 15.0
         content_score -= deduction
         issues.append(AuditIssue(
@@ -76,6 +118,27 @@ def audit_resume_health(resume_ast: ResumeAST, raw_text: str, language: str = "e
             title="Low Frequency of Quantifiable Metrics",
             description=f"Only {round(metric_ratio*100)}% of your bullet points contain measurable results or metrics.",
             recommendation="Incorporate numbers, percentages, budget sizes, team counts, or latency reductions using the STAR formula."
+        ))
+
+    action_starters = {
+        "built", "created", "designed", "developed", "delivered", "engineered",
+        "implemented", "improved", "increased", "reduced", "led", "managed",
+        "optimized", "automated", "architected", "conçu", "développé",
+        "implémenté", "optimisé", "automatisé", "piloté", "réduit", "augmenté",
+    }
+    action_ratio = sum(
+        bullet.lstrip("- ").split(maxsplit=1)[0].lower().rstrip(".,:;")
+        in action_starters
+        for bullet in all_bullets
+    ) / max(1, len(all_bullets))
+    if all_bullets and action_ratio < 0.35:
+        content_score -= 10.0
+        issues.append(AuditIssue(
+            category="CONTENT_IMPACT",
+            severity="WARNING",
+            title="Weak Achievement Openings",
+            description=f"Only {round(action_ratio * 100)}% of bullets start with clear action verbs.",
+            recommendation="Start bullets with specific verbs that show ownership, such as Built, Led, Reduced, or Optimized."
         ))
 
     # Check passive weak verbs

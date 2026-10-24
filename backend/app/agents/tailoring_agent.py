@@ -1,11 +1,39 @@
-import re
 import logging
-from typing import Dict, List, Any, Tuple
-from app.schemas.state import ResumeAST, WorkExperienceItem, BulletPoint
+from typing import Any, Dict, List, Tuple
+
+from pydantic import BaseModel, Field
+
 from app.core.llm import invoke_json
 from app.prompts import tailoring_prompt
+from app.schemas.state import ResumeAST
 
 logger = logging.getLogger(__name__)
+
+
+class TailoredBullet(BaseModel):
+    id: str
+    tailored: str = Field(min_length=1)
+
+
+class TailoringResult(BaseModel):
+    bullets: List[TailoredBullet] = Field(default_factory=list)
+
+
+def _bullet_inputs(resume_ast: ResumeAST) -> List[Dict[str, str]]:
+    return [
+        {"id": bullet.id, "company": experience.company, "role": experience.role, "original": bullet.original}
+        for experience in resume_ast.work_experiences
+        for bullet in experience.bullets
+    ]
+
+
+def _approved_skills(matched_skills: List[str], verified_skills: Dict[str, str]) -> List[str]:
+    return sorted({
+        skill
+        for skill in [*matched_skills, *verified_skills.keys()]
+        if verified_skills.get(skill) != "DECLINED"
+    })
+
 
 def tailor_resume_bullets(
     resume_ast: ResumeAST,
@@ -13,72 +41,46 @@ def tailor_resume_bullets(
     target_role: str,
     matched_skills: List[str],
     verified_skills: Dict[str, str],
-    language: str = "en"
+    language: str = "en",
 ) -> Tuple[ResumeAST, List[Dict[str, Any]]]:
-    """
-    Rewrites bullet points to align with JD while preserving fact-locked dates, titles, and companies.
-    Uses the configured LangChain model with a deterministic fallback.
-    """
-    diff_records = []
-
-    # Gather bullets to optimize
-    bullets_to_optimize = []
-    for exp in resume_ast.work_experiences:
-        for b in exp.bullets:
-            bullets_to_optimize.append({
-                "id": b.id,
-                "company": exp.company,
-                "role": exp.role,
-                "original": b.original
-            })
-
-    if not bullets_to_optimize:
+    """Tailor existing bullets once, without inventing facts or metrics."""
+    bullets = _bullet_inputs(resume_ast)
+    if not bullets:
         return resume_ast, []
 
-    # Only include skills explicitly verified or approved
-    approved_skills = list(set(matched_skills + [k for k, v in verified_skills.items() if v != "DECLINED"]))
-
-    tailored_map = {}
-
+    tailored_by_id: Dict[str, str] = {}
     try:
-        data = invoke_json(tailoring_prompt(
-            bullets_to_optimize,
-            target_role,
-            approved_skills,
-            language,
-        ))
-        if isinstance(data, list):
-            for item in data:
-                if isinstance(item, dict) and "id" in item and "tailored" in item:
-                    tailored_map[item["id"]] = item["tailored"]
-    except Exception as e:
-        logger.warning("Configured model tailoring call failed: %s. Using deterministic fallback.", e)
+        result = invoke_json(
+            tailoring_prompt(
+                bullets=bullets,
+                target_role=target_role,
+                approved_skills=_approved_skills(matched_skills, verified_skills),
+                language=language,
+                job_description=job_description,
+            ),
+            schema=TailoringResult,
+        )
+        tailored_by_id = {
+            item.id: item.tailored.strip()
+            for item in result.bullets
+            if item.id and item.tailored.strip()
+        }
+    except Exception:
+        logger.exception("Bullet tailoring failed; preserving original resume bullets.")
 
-    # Apply tailored bullets or fallback enhancements
-    for exp in resume_ast.work_experiences:
-        for b in exp.bullets:
-            if b.id in tailored_map:
-                new_text = tailored_map[b.id]
-            else:
-                # Deterministic fallback enhancement
-                orig = b.original
-                if not re.search(r'\d+', orig):
-                    verb = "Orchestré" if language == "fr" else "Spearheaded"
-                    new_text = f"{verb} {orig[0].lower() + orig[1:] if len(orig) > 1 else orig}, improving operational efficiency by 25%."
-                else:
-                    new_text = orig
-
-            b.tailored = new_text
-            
-            # STRICT GUARD: Only record into diff if the bullet was genuinely modified
-            if b.original.strip() != new_text.strip():
+    diff_records: List[Dict[str, Any]] = []
+    for experience in resume_ast.work_experiences:
+        for bullet in experience.bullets:
+            replacement = tailored_by_id.get(bullet.id, bullet.original).strip()
+            bullet.tailored = replacement
+            if replacement != bullet.original.strip():
                 diff_records.append({
-                    "bullet_id": b.id,
-                    "company": exp.company,
-                    "role": exp.role,
-                    "original": b.original.strip(),
-                    "tailored": new_text.strip(),
-                    "is_changed": True
+                    "bullet_id": bullet.id,
+                    "company": experience.company,
+                    "role": experience.role,
+                    "original": bullet.original.strip(),
+                    "tailored": replacement,
+                    "is_changed": True,
                 })
 
     return resume_ast, diff_records

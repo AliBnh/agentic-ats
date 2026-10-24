@@ -50,24 +50,30 @@ class VectorStoreManager:
                 self.client = None
 
     def _init_embedder(self):
-        if FASTEMBED_AVAILABLE:
+        # Do not block server startup with synchronous remote downloads
+        self.embed_model = None
+        self._embedder_attempted = False
+
+    def _get_embed_model(self):
+        if not self._embedder_attempted and FASTEMBED_AVAILABLE:
+            self._embedder_attempted = True
             try:
                 # Fast local lightweight embedding model (~60MB)
                 self.embed_model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
                 logger.info("FastEmbed initialized successfully.")
             except Exception as e:
-                logger.warning(f"FastEmbed init failed: {e}. Using deterministic vector fallback.")
+                logger.warning(f"FastEmbed init skipped or failed: {e}. Using deterministic dense vector fallback.")
                 self.embed_model = None
-        else:
-            self.embed_model = None
+        return self.embed_model
 
     def embed_texts(self, texts: List[str]) -> List[List[float]]:
         if not texts:
             return []
 
-        if self.embed_model is not None:
+        model = self._get_embed_model()
+        if model is not None:
             try:
-                embeddings = list(self.embed_model.embed(texts))
+                embeddings = list(model.embed(texts))
                 return [list(map(float, emb)) for emb in embeddings]
             except Exception as e:
                 logger.warning(f"Embedding generation error: {e}. Falling back to deterministic dense vector.")

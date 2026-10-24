@@ -5,16 +5,16 @@ from app.core.security import get_password_hash
 
 logger = logging.getLogger(__name__)
 
-# --- Real-World Resumes for Ali BENHIMA & Benchmark Profiles ---
+# --- Real-World Resumes and Benchmark Profiles ---
 
 SAMPLE_RESUMES = [
     {
         "id": "ali-consulting-fr",
-        "title": "Ali BENHIMA - Conseil IT & Transformation Digitale (FR)",
+        "title": "Mohamed Elmasrar - Conseil IT & Transformation Digitale (FR)",
         "language": "fr",
         "role": "Conseil IT & Transformation Digitale",
         "target_best_fit": ["wavestone-alma-fr", "deloitte-tech-fr", "pwc-tech-fr"],
-        "raw_text": """Ali BENHIMA
+        "raw_text": """Mohamed Elmasrar
 Conseil IT & Transformation Digitale | Ingénierie logiciel & IA
 Élève ingénieur ENSIAS | Stage PFE de 6 mois dès janvier 2027
 Rabat | +212 6 64 01 43 22 | benhimaali170@gmail.com
@@ -69,11 +69,11 @@ Membre CINDH : Participation à l’organisation d’actions solidaires et carit
     },
     {
         "id": "ali-swe-genai-en",
-        "title": "Ali BENHIMA - Software Engineer | Full Stack & GenAI (EN)",
+        "title": "Salaheddine Benghemid - Software Engineer | Full Stack & GenAI (EN)",
         "language": "en",
         "role": "Software Engineer | Full Stack & GenAI",
         "target_best_fit": ["bcg-x-swe-en", "ostorlab-cyber-en", "capgemini-backend-fr", "mastercard-advisors-en"],
-        "raw_text": """Ali BENHIMA
+        "raw_text": """Salaheddine Benghemid
 Software Engineer | Full Stack & GenAI
 ENSIAS Engineering Student | Final-Year Internship (PFE) from January 2027
 Rabat | +212 6 64 01 43 22 | benhimaali170@gmail.com | linkedin.com/in/ali-benhima | github.com/AliBnh
@@ -553,13 +553,17 @@ def seed_database(db: Session):
             demo_user = User(
                 email="demo@agenticats.com",
                 hashed_password=get_password_hash("Password123!"),
-                full_name="Ali BENHIMA"
+                full_name="Demo User"
             )
             db.add(demo_user)
             db.commit()
             db.refresh(demo_user)
             logger.info("Successfully seeded demo user: demo@agenticats.com / Password123!")
         else:
+            if existing_user.full_name != "Demo User":
+                existing_user.full_name = "Demo User"
+                db.commit()
+                logger.info("Updated demo user display name to Demo User.")
             logger.info("Demo user already exists.")
     except Exception as e:
         logger.warning(f"Database seed skipped or failed: {e}")

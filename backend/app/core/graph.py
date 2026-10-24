@@ -76,7 +76,7 @@ def conditional_check_convergence(state: AgenticATSState) -> Literal["node_synth
     """Conditional Edge: Checks if ATS score meets the 85% threshold or exceeded max retry budget."""
     score = state.get("ats_score", 0.0)
     iterations = state.get("iteration_count", 0)
-    max_iter = state.get("max_iterations", 3)
+    max_iter = state.get("max_iterations", 1)
 
     logger.info(f"Convergence Check: Score={score}%, Iteration={iterations}/{max_iter}")
 

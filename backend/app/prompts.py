@@ -57,18 +57,23 @@ def tailoring_prompt(
     target_role: str,
     approved_skills: list[str],
     language: str,
+    job_description: str = "",
 ) -> str:
     output_language = "professional French" if language == "fr" else "professional English"
-    return f"""You are an ATS resume editor.
-Rewrite the supplied bullets in {output_language} for the target role.
-Preserve every factual employer, role, date, and claimed outcome. Do not add
-unsupported experience. Use strong action verbs and STAR structure. If a bullet
-has no metric, improve clarity without inventing a precise number.
+    return f"""You are a careful ATS resume editor.
+Rewrite each supplied bullet in {output_language} for the target role.
+Preserve every fact, technology, employer, date, and outcome from the original.
+Never invent a metric, percentage, employer, responsibility, or achievement.
+If the original has no metric, improve clarity without adding one. Return one
+result for every input bullet, using the same id.
 
 Target role: {target_role or "Senior Specialist"}
 Verified skills to prioritize: {", ".join(approved_skills[:12])}
+Job description:
+{job_description[:4000]}
 
-Return a JSON array containing exactly objects with "id" and "tailored".
+Return a JSON object with a "bullets" array containing exactly objects with
+"id" and "tailored".
 Bullets:
 {json.dumps(bullets[:8], ensure_ascii=False, indent=2)}
 """

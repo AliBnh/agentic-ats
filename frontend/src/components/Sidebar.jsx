@@ -214,7 +214,7 @@ export const Sidebar = ({
 
               <div className="truncate">
                 <div className="flex items-center gap-1 truncate text-xs font-semibold text-foreground">
-                  <span>{user?.full_name || 'Enterprise Candidate'}</span>
+                  <span>{user?.full_name || 'Demo User'}</span>
                 </div>
                 <div className="text-[10px] text-muted-foreground truncate">
                   {user?.email || 'demo@agenticats.com'}

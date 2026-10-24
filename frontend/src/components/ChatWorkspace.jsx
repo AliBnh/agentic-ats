@@ -3,6 +3,7 @@ import {
   ArrowUp,
   Check,
   CheckCircle2,
+  Circle,
   FileText,
   Loader2,
   Paperclip,
@@ -19,13 +20,38 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { StudioEditor } from './StudioEditor';
 
-const nodeLabels = {
-  node_diagnostic_audit: 'Auditing resume health and ATS structure',
-  node_evaluate_ats: 'Matching experience against the target role',
-  node_gap_analysis: 'Checking gaps and unverified skills',
-  node_tailor_bullets: 'Tailoring experience with STAR evidence',
-  node_synthesis: 'Preparing your resume and cover letter',
-};
+const agentPlan = [
+  {
+    node: 'node_diagnostic_audit',
+    label: 'Resume health audit',
+    description: 'Checking structure, contact details, impact, and language norms.',
+    steps: ['Read parsed resume', 'Check ATS structure', 'Measure content quality'],
+  },
+  {
+    node: 'node_evaluate_ats',
+    label: 'Role match analysis',
+    description: 'Comparing your experience with the target role.',
+    steps: ['Extract role requirements', 'Compare relevant skills', 'Calculate match score'],
+  },
+  {
+    node: 'node_gap_analysis',
+    label: 'Evidence and gap review',
+    description: 'Finding requirements that need evidence or your confirmation.',
+    steps: ['Review missing requirements', 'Check resume evidence', 'Decide whether to ask'],
+  },
+  {
+    node: 'node_tailor_bullets',
+    label: 'Experience tailoring',
+    description: 'Rewriting relevant bullets while preserving your facts.',
+    steps: ['Select relevant bullets', 'Improve clarity and relevance', 'Record every change'],
+  },
+  {
+    node: 'node_synthesis',
+    label: 'Application assembly',
+    description: 'Preparing the final resume and grounded cover letter.',
+    steps: ['Assemble fact-locked resume', 'Write role-focused letter', 'Prepare final output'],
+  },
+];
 
 function Message({ role, children }) {
   const userMessage = role === 'user';
@@ -42,10 +68,19 @@ function Message({ role, children }) {
 }
 
 function ActivityTrace({ events, loading }) {
-  const nodeEvents = events.filter((event) => event.type === 'node');
-  if (!loading && nodeEvents.length === 0) return null;
+  const agentEvents = events.filter((event) => ['agent_start', 'agent_complete'].includes(event.type));
+  if (!loading && agentEvents.length === 0) return null;
 
-  const progress = Math.min(100, Math.max(8, Math.round((nodeEvents.length / 5) * 100)));
+  const completed = new Set(
+    agentEvents.filter((event) => event.type === 'agent_complete').map((event) => event.node)
+  );
+  const started = new Set(
+    agentEvents.filter((event) => event.type === 'agent_start').map((event) => event.node)
+  );
+  const activeNode = agentPlan.find(({ node }) => started.has(node) && !completed.has(node))?.node;
+  const progress = Math.round(((completed.size + (activeNode ? 0.35 : 0)) / agentPlan.length) * 100);
+  const workflowComplete = events.some((event) => event.type === 'complete');
+  const waitingForConfirmation = events.some((event) => event.type === 'hitl');
 
   return (
     <Card className="w-full">
@@ -53,26 +88,92 @@ function ActivityTrace({ events, loading }) {
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-sm">
             <Sparkles className="text-primary" />
-            Working through your resume
+            Application workflow
           </CardTitle>
-          <Badge variant={loading ? 'brand' : 'success'}>{loading ? 'Live' : 'Done'}</Badge>
+          <Badge variant={loading ? 'secondary' : 'default'}>
+            {loading ? `${completed.size}/${agentPlan.length} complete` : 'Complete'}
+          </Badge>
         </div>
         <Progress value={progress} className="h-1.5" />
       </CardHeader>
       <CardContent className="flex flex-col gap-3 pt-0">
-        {nodeEvents.map((event, index) => (
-          <div className="flex items-start gap-3" key={`${event.node}-${index}`}>
-            <CheckCircle2 className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium">{nodeLabels[event.node] || event.node}</p>
-              <p className="text-xs text-muted-foreground">{event.status || 'Agent updated the workflow'}</p>
+        {agentPlan.map(({ node, label, description, steps }) => {
+          const isStarted = started.has(node);
+          const isComplete = completed.has(node);
+          const completion = [...agentEvents].reverse().find(
+            (event) => event.node === node && event.type === 'agent_complete'
+          );
+          const isActive = activeNode === node;
+          const isAfterGate = node === 'node_tailor_bullets' || node === 'node_synthesis';
+          const isWaiting = !isComplete && !isActive && waitingForConfirmation && isAfterGate;
+          const isSkipped = !isComplete && !isActive && workflowComplete && !isWaiting;
+          const status = isComplete
+            ? 'Completed'
+            : isActive
+              ? 'Running'
+              : isWaiting
+                ? 'Waiting'
+                : isSkipped
+                  ? 'Skipped'
+                  : isStarted
+                    ? 'Queued'
+                    : 'Pending';
+          return (
+            <div
+              className={`rounded-md border p-3 ${isActive ? 'border-primary/40 bg-muted/40' : ''}`}
+              key={node}
+            >
+              <div className="flex items-start gap-3">
+                {isComplete ? (
+                  <CheckCircle2 className="mt-0.5 shrink-0 text-muted-foreground" />
+                ) : isActive ? (
+                  <div className="mt-1 flex size-4 shrink-0 items-center justify-center">
+                    <span className="size-2 animate-pulse rounded-full bg-primary" />
+                  </div>
+                ) : (
+                  <Circle className="mt-0.5 shrink-0 text-muted-foreground/50" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-medium">{label}</p>
+                    <Badge variant={isComplete ? 'secondary' : isActive ? 'default' : 'outline'}>
+                      {status}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {isComplete
+                      ? completion?.summary || description
+                      : isWaiting
+                        ? 'Waiting for confirmation before this agent can run.'
+                        : isSkipped
+                          ? 'Not needed for this workflow run.'
+                          : description}
+                  </p>
+                </div>
+              </div>
+              {(isActive || isComplete) && (
+                <div className="ml-7 mt-3 flex flex-col gap-2 border-l pl-3">
+                  {steps.map((step, index) => (
+                    <div className="flex items-center gap-2 text-xs" key={step}>
+                      {isComplete || (isActive && index === 0) ? (
+                        <Check className="text-muted-foreground" />
+                      ) : (
+                        <Circle className="text-muted-foreground/50" />
+                      )}
+                      <span className={isComplete || (isActive && index === 0) ? '' : 'text-muted-foreground'}>
+                        {step}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
         {loading && (
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <Loader2 className="animate-spin text-primary" />
-            <span>The next agent is starting...</span>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="size-1.5 rounded-full bg-muted-foreground" />
+            <span>The workflow will move to the next step automatically.</span>
           </div>
         )}
       </CardContent>
@@ -80,10 +181,40 @@ function ActivityTrace({ events, loading }) {
   );
 }
 
-function ResumeComposer({ text, file, busy, onTextChange, onFileChange, onSubmit }) {
+function ResumeComposer({
+  text,
+  file,
+  busy,
+  onTextChange,
+  onFileChange,
+  onSubmit,
+  sampleCatalog,
+  onLoadSampleResume,
+}) {
   return (
     <Card className="w-full">
       <CardContent className="p-3">
+        {sampleCatalog?.sample_resumes?.length > 0 && (
+          <div className="mb-3 flex flex-col gap-2 border-b pb-3">
+            <p className="text-xs font-medium text-muted-foreground">Or start with a sample resume</p>
+            <div className="flex flex-wrap gap-2">
+              {sampleCatalog.sample_resumes.slice(0, 4).map((resume) => (
+                <Button
+                  key={resume.id}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onLoadSampleResume(resume.id)}
+                  disabled={busy}
+                  className="h-auto max-w-full justify-start whitespace-normal text-left"
+                >
+                  <FileText />
+                  <span className="truncate">{resume.title}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
         {file && (
           <Badge variant="secondary" className="mb-2 gap-2">
             <FileText />
@@ -122,10 +253,30 @@ function ResumeComposer({ text, file, busy, onTextChange, onFileChange, onSubmit
   );
 }
 
-function JobComposer({ role, description, busy, onRoleChange, onDescriptionChange, onSubmit }) {
+function JobComposer({ role, description, busy, onRoleChange, onDescriptionChange, onSubmit, sampleCatalog, onLoadSampleJob }) {
   return (
     <Card className="w-full">
       <CardContent className="flex flex-col gap-2 p-3">
+        {sampleCatalog?.sample_jds?.length > 0 && (
+          <div className="flex flex-col gap-2 border-b pb-3">
+            <p className="text-xs font-medium text-muted-foreground">Or choose a sample job</p>
+            <div className="flex flex-wrap gap-2">
+              {sampleCatalog.sample_jds.slice(0, 4).map((job) => (
+                <Button
+                  key={job.id}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onLoadSampleJob(job.id)}
+                  disabled={busy}
+                  className="h-auto max-w-full justify-start whitespace-normal text-left"
+                >
+                  <span className="truncate">{job.title}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
         <Input
           value={role}
           onChange={(event) => onRoleChange(event.target.value)}
@@ -203,6 +354,8 @@ export function ChatWorkspace({
   prefilledLang,
   prefilledJdText,
   prefilledRole,
+  onLoadSampleResume,
+  onLoadSampleJob,
   onParsedConfirmed,
   onStartRemediation,
   onResolveHITL,
@@ -285,6 +438,8 @@ export function ChatWorkspace({
                 onTextChange={setResumeText}
                 onFileChange={setResumeFile}
                 onSubmit={submitResume}
+                sampleCatalog={sampleCatalog}
+                onLoadSampleResume={onLoadSampleResume}
               />
             </Message>
           )}
@@ -297,7 +452,7 @@ export function ChatWorkspace({
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm">Baseline audit complete</CardTitle>
-                    <Badge variant="success">{Math.round(diagnosticReport.overall_health_score || 0)}% health</Badge>
+                    <Badge variant="success">{Math.round(diagnosticReport.health_score ?? diagnosticReport.overall_health_score ?? 0)}% health</Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="grid gap-3 pt-0 sm:grid-cols-3">
@@ -319,6 +474,8 @@ export function ChatWorkspace({
                 onRoleChange={setRole}
                 onDescriptionChange={setJobDescription}
                 onSubmit={submitJob}
+                sampleCatalog={sampleCatalog}
+                onLoadSampleJob={onLoadSampleJob}
               />
             </Message>
           )}

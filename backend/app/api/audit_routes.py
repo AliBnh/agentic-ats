@@ -36,6 +36,30 @@ def _sse_event(payload: Dict[str, Any]) -> str:
     return f"data: {json.dumps(payload, default=str)}\n\n"
 
 
+def _agent_summary(node_name: str, update: Dict[str, Any]) -> str:
+    summaries = {
+        "node_diagnostic_audit": (
+            f"Resume health {update.get('health_score', 0):.0f}% · "
+            f"{len(update.get('audit_issues', []))} issue(s) found"
+        ),
+        "node_evaluate_ats": (
+            f"ATS match {update.get('ats_score', 0):.0f}% · "
+            f"{len(update.get('matched_skills', []))} matched · "
+            f"{len(update.get('missing_critical_skills', []))} missing"
+        ),
+        "node_gap_analysis": (
+            "Waiting for experience verification"
+            if update.get("hitl_pending")
+            else "No additional verification required"
+        ),
+        "node_tailor_bullets": (
+            f"{len(update.get('diff', []))} bullet(s) improved"
+        ),
+        "node_synthesis": "Resume and cover letter are ready",
+    }
+    return summaries.get(node_name, "Agent completed its work")
+
+
 @router.post("/match-job/stream")
 async def stream_match_job(
     request: JobMatchRequest,
@@ -74,7 +98,7 @@ async def stream_match_job(
             "ats_score": 0.0,
             "score_history": [],
             "iteration_count": 0,
-            "max_iterations": 3,
+            "max_iterations": 1,
             "hitl_pending": False,
             "hitl_question": None,
             "verified_skills": {},
@@ -92,16 +116,41 @@ async def stream_match_job(
         state = dict(current_state)
         try:
             config = {"configurable": {"thread_id": thread_id}}
-            async for update in ats_graph.astream(state, config=config, stream_mode="updates"):
-                node_name = next(iter(update), "graph")
-                node_update = update.get(node_name, {})
-                state.update(node_update)
-                yield _sse_event({
-                    "type": "node",
-                    "node": node_name,
-                    "status": state.get("status"),
-                    "update": node_update,
-                })
+            async for event in ats_graph.astream_events(state, config=config, version="v2"):
+                node_name = event.get("name", "")
+                if not node_name.startswith("node_"):
+                    continue
+
+                if event.get("event") == "on_chain_start":
+                    yield _sse_event({
+                        "type": "agent_start",
+                        "node": node_name,
+                    })
+                elif event.get("event") == "on_chain_end":
+                    node_update = event.get("data", {}).get("output") or {}
+                    if not isinstance(node_update, dict):
+                        continue
+                    state.update(node_update)
+                    yield _sse_event({
+                        "type": "agent_complete",
+                        "node": node_name,
+                        "status": state.get("status"),
+                        "summary": _agent_summary(node_name, node_update),
+                        "update": {
+                            key: value
+                            for key, value in node_update.items()
+                            if key in {
+                                "health_score",
+                                "ats_score",
+                                "matched_skills",
+                                "missing_critical_skills",
+                                "diff",
+                                "hitl_pending",
+                                "tailored_markdown",
+                                "cover_letter",
+                            }
+                        },
+                    })
                 await asyncio.sleep(0)
 
             ACTIVE_GRAPH_STATES[thread_id] = state
@@ -254,7 +303,7 @@ def confirm_parsing(
         "ats_score": 0.0,
         "score_history": [],
         "iteration_count": 0,
-        "max_iterations": 3,
+        "max_iterations": 1,
         "hitl_pending": False,
         "hitl_question": None,
         "verified_skills": {},
@@ -307,6 +356,7 @@ def confirm_parsing(
     return {
         "thread_id": thread_id,
         "health_score": result_state.get("health_score"),
+        "overall_health_score": result_state.get("health_score"),
         "ats_formatting_score": result_state.get("ats_formatting_score"),
         "content_impact_score": result_state.get("content_impact_score"),
         "language_norm_score": result_state.get("language_norm_score"),
@@ -354,7 +404,7 @@ def match_job(
             "ats_score": 0.0,
             "score_history": [],
             "iteration_count": 0,
-            "max_iterations": 3,
+            "max_iterations": 1,
             "hitl_pending": False,
             "hitl_question": None,
             "verified_skills": {},
