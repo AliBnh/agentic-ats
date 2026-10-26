@@ -47,10 +47,10 @@ services:
       - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_agentic_ats_prod_2026_secure}
       - JWT_ALGORITHM=HS256
       - ACCESS_TOKEN_EXPIRE_MINUTES=1440
-      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-false}
-      - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT:-https://api.smith.langchain.com}
-      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY:-}
-      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-agentic-ats}
+      - LANGSMITH_TRACING=${LANGSMITH_TRACING:-${LANGSMITH_TRACING_V2:-${LANGCHAIN_TRACING_V2:-false}}}
+      - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT:-${LANGCHAIN_ENDPOINT:-https://api.smith.langchain.com}}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-${LANGCHAIN_API_KEY:-}}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-${LANGCHAIN_PROJECT:-agentic-ats}}
     ports:
       - "8000:8000"
     depends_on:

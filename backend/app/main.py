@@ -17,14 +17,19 @@ logging.basicConfig(
 logger = logging.getLogger("agentic_ats")
 
 # LangSmith Observability Setup
-if settings.LANGCHAIN_TRACING_V2.lower() == "true" and settings.LANGCHAIN_API_KEY:
+if settings.LANGSMITH_TRACING.lower() == "true" and settings.LANGSMITH_API_KEY:
+    os.environ["LANGSMITH_TRACING"] = "true"
+    os.environ["LANGSMITH_ENDPOINT"] = settings.LANGSMITH_ENDPOINT
+    os.environ["LANGSMITH_API_KEY"] = settings.LANGSMITH_API_KEY
+    os.environ["LANGSMITH_PROJECT"] = settings.LANGSMITH_PROJECT
+    # Keep legacy names available for integrations that still read them.
     os.environ["LANGCHAIN_TRACING_V2"] = "true"
-    os.environ["LANGCHAIN_ENDPOINT"] = settings.LANGCHAIN_ENDPOINT
-    os.environ["LANGCHAIN_API_KEY"] = settings.LANGCHAIN_API_KEY
-    os.environ["LANGCHAIN_PROJECT"] = settings.LANGCHAIN_PROJECT
-    logger.info(f"LangSmith Tracing active for project: '{settings.LANGCHAIN_PROJECT}'")
+    os.environ["LANGCHAIN_ENDPOINT"] = settings.LANGSMITH_ENDPOINT
+    os.environ["LANGCHAIN_API_KEY"] = settings.LANGSMITH_API_KEY
+    os.environ["LANGCHAIN_PROJECT"] = settings.LANGSMITH_PROJECT
+    logger.info(f"LangSmith Tracing active for project: '{settings.LANGSMITH_PROJECT}'")
 else:
-    logger.info("LangSmith Tracing inactive (optional: set LANGCHAIN_API_KEY to enable).")
+    logger.info("LangSmith Tracing inactive (set LANGSMITH_API_KEY and LANGSMITH_TRACING=true to enable).")
 
 # Create tables
 try:
@@ -107,4 +112,3 @@ def root():
 @app.get("/health")
 def healthcheck():
     return {"status": "HEALTHY", "metrics": "ACTIVE", "version": "1.0.0"}
-

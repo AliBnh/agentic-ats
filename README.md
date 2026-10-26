@@ -221,9 +221,9 @@ MODEL_TEMPERATURE=0.0
 Optional LangSmith tracing:
 
 ```env
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_API_KEY=your_langsmith_api_key
-LANGCHAIN_PROJECT=agentic-ats
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=your_langsmith_api_key
+LANGSMITH_PROJECT=agentic-ats
 ```
 
 ## API surface

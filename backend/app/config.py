@@ -20,10 +20,25 @@ class Settings(BaseSettings):
     MODEL_TEMPERATURE: float = float(os.getenv("MODEL_TEMPERATURE", "0.0"))
 
     # LangSmith Observability & Tracing
-    LANGCHAIN_TRACING_V2: str = os.getenv("LANGCHAIN_TRACING_V2", "false")
-    LANGCHAIN_ENDPOINT: str = os.getenv("LANGCHAIN_ENDPOINT", "https://api.smith.langchain.com")
-    LANGCHAIN_API_KEY: str = os.getenv("LANGCHAIN_API_KEY", "")
-    LANGCHAIN_PROJECT: str = os.getenv("LANGCHAIN_PROJECT", "agentic-ats")
+    LANGSMITH_TRACING: str = os.getenv(
+        "LANGSMITH_TRACING",
+        os.getenv(
+            "LANGSMITH_TRACING_V2",
+            os.getenv("LANGCHAIN_TRACING_V2", "false"),
+        ),
+    )
+    LANGSMITH_ENDPOINT: str = os.getenv(
+        "LANGSMITH_ENDPOINT",
+        os.getenv("LANGCHAIN_ENDPOINT", "https://api.smith.langchain.com"),
+    )
+    LANGSMITH_API_KEY: str = os.getenv(
+        "LANGSMITH_API_KEY",
+        os.getenv("LANGCHAIN_API_KEY", ""),
+    )
+    LANGSMITH_PROJECT: str = os.getenv(
+        "LANGSMITH_PROJECT",
+        os.getenv("LANGCHAIN_PROJECT", "agentic-ats"),
+    )
 
     class Config:
         env_file = ".env"
