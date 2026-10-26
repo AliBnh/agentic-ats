@@ -89,8 +89,56 @@ def parse_pdf_to_ast(file_bytes: bytes, language: str = "en") -> ResumeAST:
         resume_vision_parser_prompt(language, len(images)),
         images,
         model_name=settings.PARSER_MODEL_NAME,
+        run_name="Vision Resume Parser",
     )
     return parse_resume_to_ast("", language, parsed_data=data, allow_fallback=False)
 
 
-__all__ = ["extract_text_from_pdf", "parse_pdf_to_ast", "parse_resume_to_ast"]
+def resume_ast_to_text(resume_ast: ResumeAST) -> str:
+    """Render the vision parser's structured facts as the graph's source text."""
+    lines = [resume_ast.full_name]
+    lines.extend(value for value in resume_ast.contact_info.values() if value)
+
+    if resume_ast.professional_summary:
+        lines.extend(["", resume_ast.professional_summary])
+
+    for heading, experiences in (
+        ("Experience", resume_ast.work_experiences),
+        ("Projects", resume_ast.projects),
+    ):
+        if not experiences:
+            continue
+        lines.extend(["", heading])
+        for experience in experiences:
+            header = " | ".join(
+                value
+                for value in (experience.role, experience.company, experience.dates, experience.location)
+                if value
+            )
+            lines.append(header)
+            lines.extend(f"- {bullet.original}" for bullet in experience.bullets)
+
+    if resume_ast.education:
+        lines.extend(["", "Education"])
+        lines.extend(
+            " | ".join(value for value in (item.degree, item.institution, item.year) if value)
+            for item in resume_ast.education
+        )
+    if resume_ast.skills:
+        lines.extend(["", "Skills", ", ".join(resume_ast.skills)])
+    if resume_ast.certifications:
+        lines.extend(["", "Certifications", *resume_ast.certifications])
+    if resume_ast.languages_spoken:
+        lines.extend(["", "Languages", ", ".join(resume_ast.languages_spoken)])
+    if resume_ast.leadership:
+        lines.extend(["", "Leadership", *resume_ast.leadership])
+
+    return "\n".join(line for line in lines if line).strip()
+
+
+__all__ = [
+    "extract_text_from_pdf",
+    "parse_pdf_to_ast",
+    "parse_resume_to_ast",
+    "resume_ast_to_text",
+]

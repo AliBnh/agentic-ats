@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
     MODEL_PROVIDER: str = os.getenv("MODEL_PROVIDER", "groq")
-    MODEL_NAME: str = os.getenv("MODEL_NAME", "openai/gpt-oss-20b")
+    MODEL_NAME: str = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")
     PARSER_MODEL_NAME: str = os.getenv("PARSER_MODEL_NAME", "qwen/qwen3.8-27b")
     MODEL_TEMPERATURE: float = float(os.getenv("MODEL_TEMPERATURE", "0.0"))
 

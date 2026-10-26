@@ -71,8 +71,8 @@ export const api = {
     if (finalEvent?.type === 'error') throw new Error(finalEvent.message);
     return finalEvent?.result || finalEvent;
   },
-  resumeHITL: async (threadId, skill, decision, notes = '') =>
-    (await apiClient.post(`/api/audit/resume/${threadId}`, { skill, decision, notes })).data,
+  resumeHITL: async (threadId, responses) =>
+    (await apiClient.post(`/api/audit/resume/${threadId}`, { responses })).data,
   getAuditResult: async (threadId) => (await apiClient.get(`/api/audit/result/${threadId}`)).data,
   exportPdf: async (markdownContent) =>
     (await apiClient.post('/api/audit/export/pdf', { markdown_content: markdownContent }, { responseType: 'blob' })).data,

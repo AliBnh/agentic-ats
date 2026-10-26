@@ -19,6 +19,7 @@ function Dashboard() {
   const [hitlLoading, setHitlLoading] = useState(false);
   const [tailoredResult, setTailoredResult] = useState(null);
   const [prefilledText, setPrefilledText] = useState('');
+  const [selectedResumeId, setSelectedResumeId] = useState(null);
   const [prefilledLang, setPrefilledLang] = useState('en');
   const [prefilledJdText, setPrefilledJdText] = useState('');
   const [prefilledRole, setPrefilledRole] = useState('');
@@ -55,6 +56,7 @@ function Dashboard() {
     setHitlData(null);
     setAgentEvents([]);
     setPrefilledText('');
+    setSelectedResumeId(null);
     setPrefilledJdText('');
     setPrefilledRole('');
   };
@@ -114,6 +116,7 @@ function Dashboard() {
     if (resume) {
       setPrefilledText(resume.raw_text);
       setPrefilledLang(resume.language);
+      setSelectedResumeId(resume.id);
     }
     if (jd) {
       setPrefilledJdText(jd.text);
@@ -129,12 +132,19 @@ function Dashboard() {
     if (!resume) return;
     setPrefilledText(resume.raw_text);
     setPrefilledLang(resume.language);
+    setSelectedResumeId(resume.id);
     setPrefilledJdText('');
     setPrefilledRole('');
     setDiagnosticReport(null);
     setTailoredResult(null);
     setHitlData(null);
     setAgentEvents([]);
+  };
+
+  const handleClearSampleResume = () => {
+    setPrefilledText('');
+    setPrefilledLang('en');
+    setSelectedResumeId(null);
   };
 
   const handleLoadSampleJob = (jdId) => {
@@ -176,12 +186,14 @@ function Dashboard() {
     }
   };
 
-  const handleResolveHITL = async (skill, decision, notes) => {
+  const handleResolveHITL = async (responses) => {
     setHitlLoading(true);
     try {
-      const result = await api.resumeHITL(activeThreadId, skill, decision, notes);
-      setHitlData(null);
-      if (!result.hitl_pending) {
+      const result = await api.resumeHITL(activeThreadId, responses);
+      if (result.hitl_pending) {
+        setHitlData(result);
+      } else {
+        setHitlData(null);
         setAgentEvents((previous) => [
           ...previous,
           { type: 'agent_start', node: 'node_tailor_bullets' },
@@ -198,8 +210,8 @@ function Dashboard() {
           },
           { type: 'complete' },
         ]);
+        setTailoredResult(result);
       }
-      setTailoredResult(result);
       fetchThreads();
     } catch (err) {
       console.error('Error resuming HITL:', err);
@@ -242,10 +254,12 @@ function Dashboard() {
             agentEvents={agentEvents}
             sampleCatalog={sampleCatalog}
             prefilledText={prefilledText}
+            selectedResumeId={selectedResumeId}
             prefilledLang={prefilledLang}
             prefilledJdText={prefilledJdText}
             prefilledRole={prefilledRole}
             onLoadSampleResume={handleLoadSampleResume}
+            onClearSampleResume={handleClearSampleResume}
             onLoadSampleJob={handleLoadSampleJob}
             onParsedConfirmed={handleParsedConfirmed}
             onProceedToMatching={() => {}}

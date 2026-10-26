@@ -213,7 +213,7 @@ The important settings are in `.env`:
 ```env
 GROQ_API_KEY=your_groq_api_key
 MODEL_PROVIDER=groq
-MODEL_NAME=openai/gpt-oss-20b
+MODEL_NAME=openai/gpt-oss-120b
 PARSER_MODEL_NAME=qwen/qwen3.8-27b
 MODEL_TEMPERATURE=0.0
 ```

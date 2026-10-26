@@ -9,6 +9,7 @@ import {
   Paperclip,
   ShieldAlert,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { api } from '../services/api';
 import { Badge } from '@/components/ui/badge';
@@ -184,12 +185,14 @@ function ActivityTrace({ events, loading }) {
 function ResumeComposer({
   text,
   file,
+  selectedResumeId,
   busy,
   onTextChange,
   onFileChange,
   onSubmit,
   sampleCatalog,
   onLoadSampleResume,
+  onClearSampleResume,
 }) {
   return (
     <Card className="w-full">
@@ -199,18 +202,35 @@ function ResumeComposer({
             <p className="text-xs font-medium text-muted-foreground">Or start with a sample resume</p>
             <div className="flex flex-wrap gap-2">
               {sampleCatalog.sample_resumes.slice(0, 4).map((resume) => (
-                <Button
-                  key={resume.id}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onLoadSampleResume(resume.id)}
-                  disabled={busy}
-                  className="h-auto max-w-full justify-start whitespace-normal text-left"
-                >
-                  <FileText />
-                  <span className="truncate">{resume.title}</span>
-                </Button>
+                <div key={resume.id} className="flex items-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onLoadSampleResume(resume.id)}
+                    disabled={busy}
+                    className="h-auto max-w-full justify-start whitespace-normal rounded-r-none text-left"
+                  >
+                    <FileText />
+                    <span className="truncate">{resume.title}</span>
+                  </Button>
+                  {selectedResumeId === resume.id && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      aria-label={`Deselect ${resume.title}`}
+                      disabled={busy}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onClearSampleResume();
+                      }}
+                      className="size-9 shrink-0 rounded-l-none border-l-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      <X />
+                    </Button>
+                  )}
+                </div>
               ))}
             </div>
           </div>
@@ -302,38 +322,51 @@ function JobComposer({ role, description, busy, onRoleChange, onDescriptionChang
 }
 
 function VerificationCard({ data, loading, onResolve }) {
-  const [decision, setDecision] = useState('APPROVED');
-  const [notes, setNotes] = useState('');
-  const question = data?.hitl_question;
-  if (!question) return null;
+  const questions = data?.hitl_questions || (data?.hitl_question ? [data.hitl_question] : []);
+  const [responses, setResponses] = useState({});
+  if (questions.length === 0) return null;
+
+  const updateResponse = (skill, field, value) => {
+    setResponses((current) => ({
+      ...current,
+      [skill]: { decision: 'APPROVED', notes: '', ...current[skill], [field]: value },
+    }));
+  };
 
   return (
     <Card className="w-full">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm">
           <ShieldAlert className="text-amber-600 dark:text-amber-400" />
-          I need your confirmation
+          I need your confirmation ({questions.length})
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 pt-0">
-        <p className="text-sm leading-relaxed">{question.question}</p>
-        {question.context && <p className="border-l-2 border-primary/40 pl-3 text-xs italic text-muted-foreground">“{question.context}”</p>}
-        <div className="grid gap-2 sm:grid-cols-3">
-          {[
-            ['APPROVED', 'I have this experience'],
-            ['TRANSFERABLE', 'I have related experience'],
-            ['DECLINED', 'Do not include it'],
-          ].map(([value, label]) => (
-            <Button key={value} type="button" variant={decision === value ? 'default' : 'outline'} onClick={() => setDecision(value)} className="h-auto justify-start whitespace-normal py-2 text-left text-xs">
-              {decision === value && <Check />}
-              {label}
-            </Button>
-          ))}
-        </div>
-        {decision !== 'DECLINED' && <Input value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Optional experience context" />}
-        <Button disabled={loading} onClick={() => onResolve(question.skill, decision, notes)}>
+        {questions.map((question) => {
+          const response = responses[question.skill] || { decision: 'APPROVED', notes: '' };
+          return (
+            <div key={question.skill} className="flex flex-col gap-3 border-b pb-4 last:border-b-0 last:pb-0">
+              <p className="text-sm leading-relaxed">{question.question}</p>
+              {question.context && <p className="border-l-2 border-primary/40 pl-3 text-xs italic text-muted-foreground">“{question.context}”</p>}
+              <div className="grid gap-2 sm:grid-cols-3">
+                {[
+                  ['APPROVED', 'I have this experience'],
+                  ['TRANSFERABLE', 'I have related experience'],
+                  ['DECLINED', 'Do not include it'],
+                ].map(([value, label]) => (
+                  <Button key={value} type="button" variant={response.decision === value ? 'default' : 'outline'} onClick={() => updateResponse(question.skill, 'decision', value)} className="h-auto justify-start whitespace-normal py-2 text-left text-xs">
+                    {response.decision === value && <Check />}
+                    {label}
+                  </Button>
+                ))}
+              </div>
+              {response.decision !== 'DECLINED' && <Input value={response.notes} onChange={(event) => updateResponse(question.skill, 'notes', event.target.value)} placeholder="Optional experience context" />}
+            </div>
+          );
+        })}
+        <Button disabled={loading} onClick={() => onResolve(questions.map((question) => ({ skill: question.skill, ...(responses[question.skill] || { decision: 'APPROVED', notes: '' }) })))}>
           {loading ? <Loader2 className="animate-spin" /> : <ArrowUp />}
-          Continue
+          Continue with all responses
         </Button>
       </CardContent>
     </Card>
@@ -351,10 +384,12 @@ export function ChatWorkspace({
   agentEvents,
   sampleCatalog,
   prefilledText,
+  selectedResumeId,
   prefilledLang,
   prefilledJdText,
   prefilledRole,
   onLoadSampleResume,
+  onClearSampleResume,
   onLoadSampleJob,
   onParsedConfirmed,
   onStartRemediation,
@@ -434,12 +469,14 @@ export function ChatWorkspace({
               <ResumeComposer
                 text={resumeText}
                 file={resumeFile}
+                selectedResumeId={selectedResumeId}
                 busy={resumeBusy}
                 onTextChange={setResumeText}
                 onFileChange={setResumeFile}
                 onSubmit={submitResume}
                 sampleCatalog={sampleCatalog}
                 onLoadSampleResume={onLoadSampleResume}
+                onClearSampleResume={onClearSampleResume}
               />
             </Message>
           )}

@@ -1,19 +1,37 @@
 import re
+import logging
+from functools import lru_cache
 from typing import Dict, List, Any, Tuple
+from pydantic import BaseModel, Field
 from app.core.qdrant_client import vector_store
+from app.core.llm import invoke_json
 
-# Common tech/business skill dictionary for high-precision token matching
-COMMON_SKILL_CATALOG = {
-    "python", "javascript", "typescript", "react", "fastapi", "django", "flask",
-    "postgresql", "postgres", "sql", "nosql", "mongodb", "redis", "docker",
-    "kubernetes", "k8s", "aws", "azure", "gcp", "git", "ci/cd", "linux",
-    "rest", "graphql", "microservices", "machine learning", "deep learning",
-    "nlp", "llm", "langchain", "langgraph", "pytorch", "tensorflow", "pandas",
-    "numpy", "scikit-learn", "data science", "agile", "scrum", "devops",
-    # French counterparts
-    "gestion de projet", "méthode agile", "bases de données", "sécurité",
-    "conception logicielle", "architecture logicielle", "analyse de données"
-}
+logger = logging.getLogger(__name__)
+
+class ExtractedSkills(BaseModel):
+    skills: List[str] = Field(default_factory=list)
+
+
+def _skill_extraction_prompt(text: str) -> str:
+    return f"""Extract the professional skills and competencies explicitly present
+in the text below. Include technical skills, tools, methodologies, business
+domains, analytical capabilities, and languages when they are presented as
+candidate qualifications or job requirements.
+
+Do not include:
+- company, department, product, school, or organization names
+- job titles, locations, benefits, responsibilities, or generic nouns
+- skills inferred only from context
+
+Normalize equivalent spellings to one concise name (for example, Kubernetes
+instead of K8s when both refer to the same skill). Preserve meaningful
+distinctions such as Python and Python programming only once. Return only JSON:
+{{"skills": ["skill name"]}}
+
+Text:
+{text[:18000]}
+"""
+
 
 ACTION_VERBS = {
     # English
@@ -25,23 +43,27 @@ ACTION_VERBS = {
     "implémenté", "réduit", "augmenté", "accéléré", "piloté", "supervisé"
 }
 
+@lru_cache(maxsize=256)
 def extract_skills_from_text(text: str) -> List[str]:
-    """Extracts recognized technical and domain competencies from text."""
-    lower_text = text.lower()
-    found_skills = set()
-    for skill in COMMON_SKILL_CATALOG:
-        # Check boundary match
-        pattern = r'\b' + re.escape(skill) + r'\b'
-        if re.search(pattern, lower_text):
-            found_skills.add(skill.capitalize() if len(skill) > 3 else skill.upper())
+    """Extract skills with the model and cache results for stable scoring."""
+    if not text.strip():
+        return []
 
-    # Also extract capitalized acronyms (like AWS, API, SRE, ETL)
-    acronyms = re.findall(r'\b[A-Z]{2,5}\b', text)
-    for acr in acronyms:
-        if acr not in {"AND", "THE", "FOR", "WITH", "THAT", "THIS"}:
-            found_skills.add(acr)
-
-    return sorted(list(found_skills))
+    try:
+        result = invoke_json(
+            _skill_extraction_prompt(text),
+            temperature=0.0,
+            run_name="Skill Extraction",
+        )
+        extracted = ExtractedSkills.model_validate(result)
+        return sorted({
+            skill.strip()
+            for skill in extracted.skills
+            if skill.strip() and len(skill.strip()) <= 80
+        })
+    except Exception:
+        logger.exception("Model skill extraction failed.")
+        return []
 
 
 def evaluate_star_compliance(bullets: List[str]) -> Tuple[float, int, int]:
@@ -75,7 +97,9 @@ def calculate_hybrid_ats_score(
     resume_text: str,
     job_description: str,
     resume_bullets: List[str],
-    language: str = "en"
+    language: str = "en",
+    required_skills: List[str] | None = None,
+    resume_skills: List[str] | None = None,
 ) -> Dict[str, Any]:
     """
     Deterministic Hybrid ATS Evaluation Tool:
@@ -84,14 +108,11 @@ def calculate_hybrid_ats_score(
     3. STAR & Metric Impact Compliance (20%)
     """
     # 1. Skill Extraction
-    jd_skills = extract_skills_from_text(job_description)
-    resume_skills = extract_skills_from_text(resume_text)
+    jd_skills = required_skills if required_skills is not None else extract_skills_from_text(job_description)
+    extracted_resume_skills = resume_skills if resume_skills is not None else extract_skills_from_text(resume_text)
 
-    if not jd_skills:
-        jd_skills = ["Software Engineering", "Python", "API", "Databases", "Problem Solving"]
-
-    matched_skills = [s for s in jd_skills if s.lower() in [rs.lower() for rs in resume_skills]]
-    missing_skills = [s for s in jd_skills if s.lower() not in [rs.lower() for rs in resume_skills]]
+    matched_skills = [s for s in jd_skills if s.lower() in [rs.lower() for rs in extracted_resume_skills]]
+    missing_skills = [s for s in jd_skills if s.lower() not in [rs.lower() for rs in extracted_resume_skills]]
 
     keyword_ratio = len(matched_skills) / max(1, len(jd_skills))
 
@@ -120,6 +141,7 @@ def calculate_hybrid_ats_score(
         "semantic_similarity_ratio": round(semantic_sim * 100.0, 1),
         "star_compliance_ratio": round(star_ratio * 100.0, 1),
         "required_skills": jd_skills,
+        "resume_skills": extracted_resume_skills,
         "matched_skills": matched_skills,
         "missing_critical_skills": missing_skills,
         "metrics_detected_count": metrics_count,

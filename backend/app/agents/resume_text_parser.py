@@ -524,7 +524,10 @@ def parse_resume_to_ast(
     high-precision deterministic parser if the model is unavailable.
     """
     try:
-        data = parsed_data if parsed_data is not None else invoke_json(resume_parser_prompt(raw_text, language))
+        data = parsed_data if parsed_data is not None else invoke_json(
+            resume_parser_prompt(raw_text, language),
+            run_name="Text Resume Parser",
+        )
         if not isinstance(data, dict):
             raise ValueError("Resume parser returned a non-object JSON value.")
 

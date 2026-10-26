@@ -52,6 +52,55 @@ Use this schema:
 Return only valid JSON."""
 
 
+def skill_verification_prompt(
+    skill: str,
+    context_snippet: str,
+    original_resume_text: str,
+    language: str,
+) -> str:
+    output_language = "professional French" if language == "fr" else "professional English"
+    return f"""You are a careful human-in-the-loop resume assistant.
+Write one concise, natural question in {output_language} asking the candidate
+whether they have hands-on experience with the specific skill below.
+
+Skill: {skill}
+Why it matters in the job posting: {context_snippet}
+Resume evidence currently available:
+{original_resume_text[:5000]}
+
+Do not assume the candidate has this skill. Do not mention hidden analysis,
+missing keywords, or the parsing process. Ask only about this skill and invite
+the candidate to briefly describe where or how they used it if they have
+experience. Return only a JSON object with this shape:
+{{"question": "string"}}
+"""
+
+
+def skill_verification_questions_prompt(
+    skills: list[str],
+    context: str,
+    original_resume_text: str,
+    language: str,
+) -> str:
+    output_language = "professional French" if language == "fr" else "professional English"
+    return f"""You are a careful human-in-the-loop resume assistant.
+Write one concise, natural question in {output_language} for each skill below.
+Ask whether the candidate has hands-on experience and, if yes, where or how
+they used it.
+
+Skills to verify: {json.dumps(skills, ensure_ascii=False)}
+Relevant job requirements:
+{context[:4000]}
+Resume evidence currently available:
+{original_resume_text[:5000]}
+
+Do not assume the candidate has any skill. Do not mention hidden analysis,
+missing keywords, or parsing. Return exactly one question for every input skill,
+in the same order, as JSON:
+{{"questions": [{{"skill": "string", "question": "string"}}]}}
+"""
+
+
 def tailoring_prompt(
     bullets: list[dict[str, Any]],
     target_role: str,

@@ -50,7 +50,7 @@ def tailor_resume_bullets(
 
     tailored_by_id: Dict[str, str] = {}
     try:
-        result = invoke_json(
+        response = invoke_json(
             tailoring_prompt(
                 bullets=bullets,
                 target_role=target_role,
@@ -58,8 +58,9 @@ def tailor_resume_bullets(
                 language=language,
                 job_description=job_description,
             ),
-            schema=TailoringResult,
+            run_name="Resume Bullet Tailoring",
         )
+        result = TailoringResult.model_validate(response)
         tailored_by_id = {
             item.id: item.tailored.strip()
             for item in result.bullets

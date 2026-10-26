@@ -54,11 +54,24 @@ def node_evaluate_ats(state: AgenticATSState) -> Dict[str, Any]:
         if val != "DECLINED" and skill not in resume_ast.skills:
             resume_ast.skills.append(skill)
 
+    reuse_extracted_skills = state.get("resume_after_hitl", False)
+    extracted_resume_skills = state.get("extracted_resume_skills", [])
+    if reuse_extracted_skills:
+        extracted_resume_skills = sorted({
+            *extracted_resume_skills,
+            *(
+                skill for skill, value in verified.items()
+                if value != "DECLINED"
+            ),
+        })
+
     ats_res = calculate_hybrid_ats_score(
         resume_text=state.get("raw_resume", "") + " " + " ".join(resume_ast.skills),
         job_description=state.get("job_description", ""),
         resume_bullets=bullets,
-        language=state.get("language", "en")
+        language=state.get("language", "en"),
+        required_skills=state.get("required_skills") if reuse_extracted_skills else None,
+        resume_skills=extracted_resume_skills if reuse_extracted_skills else None,
     )
 
     current_score = ats_res["overall_ats_score"]
@@ -66,6 +79,7 @@ def node_evaluate_ats(state: AgenticATSState) -> Dict[str, Any]:
         "ats_score": current_score,
         "score_history": [current_score],
         "required_skills": ats_res["required_skills"],
+        "extracted_resume_skills": ats_res["resume_skills"],
         "matched_skills": ats_res["matched_skills"],
         "missing_critical_skills": ats_res["missing_critical_skills"],
         "resume_ast": resume_ast.model_dump()
@@ -92,19 +106,22 @@ def node_gap_analysis(state: AgenticATSState) -> Dict[str, Any]:
         missing_critical_skills=state.get("missing_critical_skills", []),
         verified_skills=state.get("verified_skills", {}),
         job_description=state.get("job_description", ""),
-        original_resume_text=state.get("raw_resume", "")
+        original_resume_text=state.get("raw_resume", ""),
+        language=state.get("language", "en"),
     )
 
     if gap_res["hitl_pending"]:
         logger.info(f"HITL Triggered: Unverified skill '{gap_res['target_skill']}' requires human confirmation.")
         return {
             "hitl_pending": True,
+            "hitl_questions": gap_res["hitl_questions"],
             "hitl_question": gap_res["hitl_question"],
             "status": "AWAITING_HITL"
         }
 
     return {
         "hitl_pending": False,
+        "hitl_questions": [],
         "hitl_question": None,
         "status": "TAILORING"
     }
@@ -175,7 +192,19 @@ def build_agentic_ats_graph(checkpointer=None):
     workflow.add_node("node_synthesis", node_synthesis)
 
     # Add Edges
-    workflow.add_edge(START, "node_diagnostic_audit")
+    def route_after_start(state: AgenticATSState):
+        if state.get("resume_after_hitl"):
+            return "node_tailor_bullets"
+        return "node_diagnostic_audit"
+
+    workflow.add_conditional_edges(
+        START,
+        route_after_start,
+        {
+            "node_diagnostic_audit": "node_diagnostic_audit",
+            "node_tailor_bullets": "node_tailor_bullets",
+        }
+    )
 
     # Routing from Diagnostic Audit:
     # If job description is already present, proceed straight to ATS scoring;

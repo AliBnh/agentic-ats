@@ -21,22 +21,39 @@ def get_chat_model(temperature: float | None = None, model_name: str | None = No
     )
 
 
-def invoke_json(prompt: str, schema: Type[BaseModel] | None = None, temperature: float = 0.0) -> Any:
+def invoke_json(
+    prompt: str,
+    schema: Type[BaseModel] | None = None,
+    temperature: float = 0.0,
+    run_name: str = "JSON Generation",
+) -> Any:
     """Invoke the shared model with LangChain's structured-output or JSON parser."""
     model = get_chat_model(temperature)
     if schema is not None:
-        return model.with_structured_output(schema).invoke(prompt)
+        return model.with_structured_output(schema).invoke(
+            prompt,
+            config={"run_name": run_name},
+        )
 
     from langchain_core.output_parsers import JsonOutputParser
 
-    return (model | JsonOutputParser()).invoke(prompt)
+    return (model | JsonOutputParser()).invoke(
+        prompt,
+        config={"run_name": run_name},
+    )
 
 
-def invoke_text(prompt: str, temperature: float = 0.2) -> str:
+def invoke_text(
+    prompt: str,
+    temperature: float = 0.2,
+    run_name: str = "Text Generation",
+) -> str:
     """Invoke the shared model and normalize its LangChain message output."""
     from langchain_core.output_parsers import StrOutputParser
 
-    return (get_chat_model(temperature) | StrOutputParser()).invoke(prompt).strip()
+    return (
+        get_chat_model(temperature) | StrOutputParser()
+    ).invoke(prompt, config={"run_name": run_name}).strip()
 
 
 def invoke_json_with_images(
@@ -44,6 +61,7 @@ def invoke_json_with_images(
     image_base64: Sequence[str],
     temperature: float = 0.0,
     model_name: str | None = None,
+    run_name: str = "Vision Resume Parser",
 ) -> Any:
     """Invoke the configured vision model with base64-encoded page images."""
     from langchain_core.messages import HumanMessage
@@ -54,5 +72,8 @@ def invoke_json_with_images(
         {"type": "image", "base64": image, "mime_type": "image/png"}
         for image in image_base64
     )
-    response = get_chat_model(temperature, model_name=model_name).invoke([HumanMessage(content=content)])
+    response = get_chat_model(temperature, model_name=model_name).invoke(
+        [HumanMessage(content=content)],
+        config={"run_name": run_name},
+    )
     return JsonOutputParser().invoke(response)

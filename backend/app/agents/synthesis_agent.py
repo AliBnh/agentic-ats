@@ -176,6 +176,7 @@ def synthesize_final_deliverables(
                 language=language,
             ),
             temperature=0.1,
+            run_name="Cover Letter Generation",
         )
     except Exception:
         logger.exception("Cover letter generation failed; returning a factual fallback.")

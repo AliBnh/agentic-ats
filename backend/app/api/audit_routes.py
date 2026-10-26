@@ -12,7 +12,12 @@ from app.models.thread import AuditThread
 from app.models.resume import ResumeRecord, AuditReport, TailoredVersion
 from app.core.security import get_current_user
 from app.core.graph import ats_graph, global_checkpointer
-from app.agents.pdf_parser import extract_text_from_pdf, parse_pdf_to_ast, parse_resume_to_ast
+from app.agents.pdf_parser import (
+    extract_text_from_pdf,
+    parse_pdf_to_ast,
+    parse_resume_to_ast,
+    resume_ast_to_text,
+)
 from app.utils.language_detector import detect_language
 from app.utils.pdf_exporter import generate_ats_pdf
 from app.schemas.audit import JobMatchRequest, HITLResumeRequest
@@ -93,6 +98,7 @@ async def stream_match_job(
             "job_description": "",
             "target_role": "",
             "required_skills": [],
+            "extracted_resume_skills": [],
             "matched_skills": [],
             "missing_critical_skills": [],
             "ats_score": 0.0,
@@ -100,6 +106,8 @@ async def stream_match_job(
             "iteration_count": 0,
             "max_iterations": 1,
             "hitl_pending": False,
+            "resume_after_hitl": False,
+            "hitl_questions": [],
             "hitl_question": None,
             "verified_skills": {},
             "tailored_markdown": "",
@@ -160,6 +168,7 @@ async def stream_match_job(
                     "result": {
                         "thread_id": thread_id,
                         "status": "AWAITING_HITL",
+                        "hitl_questions": state.get("hitl_questions", []),
                         "hitl_pending": True,
                         "hitl_question": state.get("hitl_question"),
                         "current_score": state.get("ats_score"),
@@ -282,12 +291,13 @@ def confirm_parsing(
 
     # Parse into structured Pydantic AST
     resume_ast = ResumeAST(**parsed_ast) if parsed_ast else parse_resume_to_ast(verified_text, language=language)
+    source_text = resume_ast_to_text(resume_ast) if parsed_ast else verified_text
 
     # Initialize LangGraph state
     initial_state = {
         "thread_id": thread_id,
         "user_id": current_user.id if current_user else "demo-user",
-        "raw_resume": verified_text,
+        "raw_resume": source_text,
         "language": language,
         "resume_ast": resume_ast.model_dump(),
         "health_score": 0.0,
@@ -298,6 +308,7 @@ def confirm_parsing(
         "job_description": "",
         "target_role": "",
         "required_skills": [],
+        "extracted_resume_skills": [],
         "matched_skills": [],
         "missing_critical_skills": [],
         "ats_score": 0.0,
@@ -305,6 +316,8 @@ def confirm_parsing(
         "iteration_count": 0,
         "max_iterations": 1,
         "hitl_pending": False,
+        "resume_after_hitl": False,
+        "hitl_questions": [],
         "hitl_question": None,
         "verified_skills": {},
         "tailored_markdown": "",
@@ -332,7 +345,7 @@ def confirm_parsing(
     # Save resume record
     resume_rec = ResumeRecord(
         thread_id=thread_id,
-        raw_text=verified_text,
+        raw_text=source_text,
         parsed_json=resume_ast.model_dump(),
         language=language,
         is_verified=True
@@ -399,6 +412,7 @@ def match_job(
             "job_description": "",
             "target_role": "",
             "required_skills": [],
+            "extracted_resume_skills": [],
             "matched_skills": [],
             "missing_critical_skills": [],
             "ats_score": 0.0,
@@ -406,6 +420,8 @@ def match_job(
             "iteration_count": 0,
             "max_iterations": 1,
             "hitl_pending": False,
+            "resume_after_hitl": False,
+            "hitl_questions": [],
             "hitl_question": None,
             "verified_skills": {},
             "tailored_markdown": "",
@@ -443,6 +459,7 @@ def match_job(
         return {
             "thread_id": thread_id,
             "status": "AWAITING_HITL",
+            "hitl_questions": result_state.get("hitl_questions", []),
             "hitl_pending": True,
             "hitl_question": result_state.get("hitl_question"),
             "current_score": result_state.get("ats_score"),
@@ -469,15 +486,27 @@ def resume_hitl_execution(
     if not current_state:
         raise HTTPException(status_code=404, detail="No suspended execution found for this thread.")
 
-    skill = payload.get("skill", "")
-    decision = payload.get("decision", "APPROVED") # APPROVED, DECLINED, TRANSFERABLE
-    notes = payload.get("notes", "")
+    responses = payload.get("responses")
+    if not isinstance(responses, list):
+        responses = [{
+            "skill": payload.get("skill", ""),
+            "decision": payload.get("decision", "APPROVED"),
+            "notes": payload.get("notes", ""),
+        }]
 
     # Update verified skills
     verified = current_state.get("verified_skills", {})
-    verified[skill] = f"{decision}: {notes}" if notes else decision
+    for response in responses:
+        skill = response.get("skill", "").strip()
+        if not skill:
+            continue
+        decision = response.get("decision", "APPROVED")
+        notes = response.get("notes", "")
+        verified[skill] = f"{decision}: {notes}" if notes else decision
     current_state["verified_skills"] = verified
     current_state["hitl_pending"] = False
+    current_state["resume_after_hitl"] = True
+    current_state["hitl_questions"] = []
     current_state["hitl_question"] = None
 
     HITL_INTERRUPTS_TOTAL.labels(action="resolved").inc()
@@ -485,12 +514,12 @@ def resume_hitl_execution(
     # Resume graph execution
     config = {
         "configurable": {"thread_id": thread_id},
-        "run_name": f"Stage 3: HITL Resumed - {skill}",
+        "run_name": "Stage 3: HITL Resumed - Batch Verification",
         "tags": ["agentic-ats", "hitl-resumed", current_state.get("language", "en")],
         "metadata": {
             "thread_id": thread_id,
-            "verified_skill": skill,
-            "decision": decision,
+            "verified_skills": [response.get("skill") for response in responses],
+            "decisions": [response.get("decision") for response in responses],
             "stage": "hitl_resumed"
         }
     }
@@ -506,6 +535,7 @@ def resume_hitl_execution(
         return {
             "thread_id": thread_id,
             "status": "AWAITING_HITL",
+            "hitl_questions": result_state.get("hitl_questions", []),
             "hitl_pending": True,
             "hitl_question": result_state.get("hitl_question"),
             "current_score": result_state.get("ats_score"),

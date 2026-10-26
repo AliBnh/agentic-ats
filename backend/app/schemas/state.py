@@ -67,6 +67,7 @@ class AgenticATSState(TypedDict):
     job_description: str
     target_role: str
     required_skills: List[str]
+    extracted_resume_skills: List[str]
     matched_skills: List[str]
     missing_critical_skills: List[str]
     
@@ -79,6 +80,8 @@ class AgenticATSState(TypedDict):
     
     # Human-in-the-Loop Gate
     hitl_pending: bool
+    resume_after_hitl: bool
+    hitl_questions: List[Dict[str, Any]]
     hitl_question: Optional[Dict[str, Any]]
     verified_skills: Dict[str, str] # e.g. {"Kubernetes": "Used for 1 year in staging"}
     
